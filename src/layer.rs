@@ -86,7 +86,7 @@ impl Dense {
 
     pub fn adjust_dims(&mut self, back_n: usize, m: usize) {
         self.w = Matrix::new(self.n, back_n);
-        self.w.random_init(-1., 1.);
+        self.w.random_init(-0.2, 0.2);
         self.b.resize(self.n, 0.);
 
         self.a = Matrix::new(self.n, m);
@@ -107,7 +107,7 @@ impl Prop for Dense {
         self.a = Matrix::new(self.n, x.cols());
         let afn = self.afn.getfn();
 
-        self.z = self.w.clone() * back.a.clone();
+        self.z = self.w.clone() * &back.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
         self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
@@ -115,15 +115,15 @@ impl Prop for Dense {
     fn back_prop(&mut self, back: &Self::T, front: Option<&Self::T>, y: &Matrix) -> Delta {
         if let Some(front) = front {
             let afn = self.afn.getfn_derivative();
-            let left: Matrix = front.w.transpose() * front.dz.clone();
+            let left: Matrix = front.w.transpose() * &front.dz;
             let right: Matrix = self.z.foreach(|r, c| afn(self.z.at(r, c)));
 
             self.dz = left.element_wise_mul(right);
         } else {
-            self.dz = self.a.clone() - y.clone();
+            self.dz = self.a.clone() - &y;
         }
 
-        let dw: Matrix = self.dz.clone() * back.a.transpose() * (1. / y.cols() as f32);
+        let dw: Matrix = self.dz.clone() * &back.a.transpose() * (1. / y.cols() as f32);
         let mut db: Vec<f32> = Vec::with_capacity(self.dz.rows());
         for r in self.dz.data() {
             db.push(r.iter().sum());

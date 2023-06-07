@@ -102,10 +102,10 @@ impl Matrix {
     }
 }
 
-impl ops::Mul<Matrix> for Matrix {
+impl ops::Mul<&Matrix> for Matrix {
     type Output = Matrix;
 
-    fn mul(self, rhs: Matrix) -> Matrix {
+    fn mul(self, rhs: &Matrix) -> Matrix {
         let mut res: Matrix = Matrix::new(self.rows(), rhs.cols());
 
         for r in 0..self.rows() {
@@ -136,10 +136,10 @@ impl ops::Mul<f32> for Matrix {
     }
 }
 
-impl ops::Add<Matrix> for Matrix {
+impl ops::Add<&Matrix> for Matrix {
     type Output = Matrix;
 
-    fn add(self, rhs: Matrix) -> Matrix {
+    fn add(self, rhs: &Matrix) -> Matrix {
         let mut res: Matrix = Matrix::new(self.rows(), self.cols());
 
         for r in 0..self.rows() {
@@ -152,10 +152,10 @@ impl ops::Add<Matrix> for Matrix {
     }
 }
 
-impl ops::Sub<Matrix> for Matrix {
+impl ops::Sub<&Matrix> for Matrix {
     type Output = Matrix;
 
-    fn sub(self, rhs: Matrix) -> Matrix {
+    fn sub(self, rhs: &Matrix) -> Matrix {
         let mut res: Matrix = Matrix::new(self.rows(), self.cols());
 
         for r in 0..self.rows() {
@@ -255,7 +255,7 @@ mod tests {
             vec![-2., 5., 0., 2.]
         ]);
 
-        assert_eq!(a * b,
+        assert_eq!(a * &b,
             Matrix::from(vec![
                 vec![5., 27., -2., 12.],
                 vec![-1., 6., 0., 6.]
@@ -271,7 +271,7 @@ mod tests {
         ]);
 
         let b: Matrix = a.clone();
-        assert_eq!(a + b,
+        assert_eq!(a + &b,
             Matrix::from(vec![
                 vec![2., 2.],
                 vec![2., 2.]

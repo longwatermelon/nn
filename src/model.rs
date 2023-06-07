@@ -159,7 +159,7 @@ fn apply_deltas(l: &mut Layer, delta: &Delta, a: f32) {
     match delta {
         Delta::Dense { dw, db } => {
             let Layer::Dense(d) = l;
-            d.w = d.w.clone() - dw.clone() * a;
+            d.w = d.w.clone() - &(dw.clone() * a);
             d.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
         }
     }

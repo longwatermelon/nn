@@ -49,7 +49,7 @@ fn main() {
     model.add(Layer::dense(25, Activation::Sigmoid));
     model.add(Layer::dense(15, Activation::Sigmoid));
     model.add(Layer::dense(1, Activation::Sigmoid));
-    model.train(&x, &y, 1000, 1.);
+    model.train(&x, &y, 2000, 1.);
 
     let example0: Vec<f32> = process_image(
         image::open("data/digits/test0.png").unwrap()
