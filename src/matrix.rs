@@ -6,6 +6,11 @@ pub struct Matrix {
     data: Vec<Vec<f32>>
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Shape4 {
+    data: Vec<Vec<Matrix>>
+}
+
 impl Matrix {
     pub fn new(rows: usize, cols: usize) -> Self {
         Self {
@@ -80,6 +85,10 @@ impl Matrix {
         self.foreach(|row, col| self.at(row, col) * other.at(row, col))
     }
 
+    pub fn flatten(&self) -> Vec<f32> {
+        self.data.clone().into_iter().flatten().collect()
+    }
+
     pub fn check_valid(&self, row: usize, col: usize) {
         if row >= self.rows() || col >= self.cols() {
             panic!(
@@ -99,6 +108,12 @@ impl Matrix {
 
     pub fn data(&self) -> &Vec<Vec<f32>> {
         &self.data
+    }
+}
+
+impl Default for Matrix {
+    fn default() -> Self {
+        Self::new(0, 0)
     }
 }
 
@@ -165,6 +180,29 @@ impl ops::Sub<&Matrix> for Matrix {
         }
 
         res
+    }
+}
+
+impl Shape4 {
+    pub fn new(blocks: usize, channels: usize, rows: usize, cols: usize) -> Self {
+        Self {
+            data: vec![vec![Matrix::new(rows, cols); channels]; blocks]
+        }
+    }
+
+    pub fn from(data: Vec<Vec<Matrix>>) -> Self {
+        Self { data }
+    }
+
+    pub fn flatten(&self) -> Vec<f32> {
+        self.data.clone().into_iter().flatten()
+            .map(|m| m.flatten()).flatten().collect()
+    }
+}
+
+impl Default for Shape4 {
+    fn default() -> Self {
+        Self { data: Vec::new() }
     }
 }
 
@@ -277,6 +315,46 @@ mod tests {
                 vec![2., 2.]
             ])
         );
+    }
+
+    #[test]
+    fn mat_flatten() {
+        let a: Matrix = Matrix::from(vec![
+            vec![1., 2.],
+            vec![3., 4.]
+        ]);
+
+        let v: Vec<f32> = a.flatten();
+        assert_eq!(v, [1., 2., 3., 4.]);
+    }
+
+    #[test]
+    fn shape4_flatten() {
+        let a: Shape4 = Shape4::from(vec![
+            vec![
+                Matrix::from(vec![
+                    vec![1., 2.],
+                    vec![3., 4.]
+                ]),
+                Matrix::from(vec![
+                    vec![5., 6.],
+                    vec![7., 8.]
+                ]),
+            ],
+            vec![
+                Matrix::from(vec![
+                    vec![9., 10.],
+                    vec![11., 12.]
+                ]),
+                Matrix::from(vec![
+                    vec![13., 14.],
+                    vec![15., 16.]
+                ]),
+            ]
+        ]);
+
+        let v: Vec<f32> = a.flatten();
+        assert_eq!(v, (1..=16).map(|x| x as f32).collect::<Vec<f32>>());
     }
 }
 

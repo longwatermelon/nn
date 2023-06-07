@@ -1,4 +1,4 @@
-use crate::matrix::Matrix;
+use crate::matrix::{Matrix, Shape4};
 
 #[derive(Clone)]
 pub enum Activation {
@@ -6,6 +6,55 @@ pub enum Activation {
     Linear,
     Relu,
     Tanh
+}
+
+#[derive(Clone)]
+pub enum Layer {
+    Dense(Dense),
+    Conv(Conv)
+}
+
+pub enum Delta {
+    Dense {
+        dw: Matrix,
+        db: Vec<f32>
+    }
+}
+
+#[derive(Clone)]
+pub struct Dense {
+    pub n: usize,
+    pub w: Matrix,
+    pub b: Vec<f32>,
+    pub afn: Activation,
+
+    pub a: Matrix,
+    pub z: Matrix,
+
+    pub dz: Matrix
+}
+
+#[derive(Clone)]
+pub struct Conv {
+    pub nc: usize,
+    pub fh: usize,
+    pub fw: usize,
+    pub s: usize,
+    pub afn: Activation,
+
+    pub w: Shape4,
+    pub b: Vec<f32>,
+
+    pub a: Shape4,
+    pub z: Shape4,
+
+    pub dz: Shape4
+}
+
+pub trait Prop {
+    type T;
+    fn forward_prop(&mut self, back: &Self::T, x: &Matrix);
+    fn back_prop(&mut self, back: &Self::T, front: Option<&Self::T>, y: &Matrix) -> Delta;
 }
 
 impl Activation {
@@ -34,41 +83,21 @@ impl Activation {
     }
 }
 
-#[derive(Clone)]
-pub enum Layer {
-    Dense(Dense)
-}
-
 impl Layer {
     pub fn dense(n: usize, afn: Activation) -> Self {
         Layer::Dense(Dense::new(n, afn))
     }
 
+    pub fn conv(filters: usize, fshape: (usize, usize), afn: Activation) -> Self {
+        Layer::Conv(Conv::new(filters, fshape, afn))
+    }
+
     pub fn to_dense(&self) -> &Dense {
         match self {
-            Layer::Dense(d) => d
+            Layer::Dense(d) => d,
+            Layer::Conv(c) => todo!()
         }
     }
-}
-
-pub enum Delta {
-    Dense {
-        dw: Matrix,
-        db: Vec<f32>
-    }
-}
-
-#[derive(Clone)]
-pub struct Dense {
-    pub n: usize,
-    pub w: Matrix,
-    pub b: Vec<f32>,
-    pub afn: Activation,
-
-    pub a: Matrix,
-    pub z: Matrix,
-
-    pub dz: Matrix
 }
 
 impl Dense {
@@ -95,10 +124,21 @@ impl Dense {
     }
 }
 
-pub trait Prop {
-    type T;
-    fn forward_prop(&mut self, back: &Self::T, x: &Matrix);
-    fn back_prop(&mut self, back: &Self::T, front: Option<&Self::T>, y: &Matrix) -> Delta;
+impl Conv {
+    pub fn new(filters: usize, fshape: (usize, usize), afn: Activation) -> Self {
+        Self {
+            nc: filters,
+            fh: fshape.0,
+            fw: fshape.1,
+            s: 1,
+            afn,
+            w: Shape4::default(),
+            b: Vec::new(),
+            a: Shape4::default(),
+            z: Shape4::default(),
+            dz: Shape4::default()
+        }
+    }
 }
 
 impl Prop for Dense {

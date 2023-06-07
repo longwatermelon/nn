@@ -63,7 +63,8 @@ impl Model {
                 Layer::Dense(d) => {
                     d.adjust_dims(prev_n, x.cols());
                     prev_n = d.n;
-                }
+                },
+                Layer::Conv(c) => todo!()
             }
         });
     }
@@ -75,7 +76,8 @@ impl Model {
             let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
 
             match l {
-                Layer::Dense(d) => d.forward_prop(back.to_dense(), x)
+                Layer::Dense(d) => d.forward_prop(back.to_dense(), x),
+                Layer::Conv(c) => todo!()
             }
         }
     }
@@ -105,7 +107,8 @@ impl Model {
                         } else { None },
                         y
                     )
-                )
+                ),
+                Layer::Conv(c) => todo!()
             };
         }
 
@@ -116,7 +119,8 @@ impl Model {
 
     fn preprare_layer0(&mut self, x: &Matrix) {
         match &mut self.layers[0] {
-            Layer::Dense(d) => d.a = x.clone()
+            Layer::Dense(d) => d.a = x.clone(),
+            Layer::Conv(c) => todo!()
         }
     }
 
@@ -128,7 +132,8 @@ impl Model {
                         last.to_dense().n
                     } else { 0 };
                     d.adjust_dims(prev_n, 1);
-                }
+                },
+                Layer::Conv(c) => todo!()
             }
         }
 
@@ -164,9 +169,10 @@ impl Default for Model {
 fn apply_deltas(l: &mut Layer, delta: &Delta, a: f32) {
     match delta {
         Delta::Dense { dw, db } => {
-            let Layer::Dense(d) = l;
-            d.w = d.w.clone() - &(dw.clone() * a);
-            d.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
+            if let Layer::Dense(d) = l {
+                d.w = d.w.clone() - &(dw.clone() * a);
+                d.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
+            }
         }
     }
 }
@@ -210,30 +216,32 @@ mod tests {
         let mut model: Model = get_model();
         model.adjust_layer_dims(&get_x());
 
-        let Layer::Dense(l_input) = &model.layers[0];
-        let Layer::Dense(l_hidden) = &model.layers[1];
-        let Layer::Dense(l_output) = &model.layers[2];
+        if let Layer::Dense(l_input) = &model.layers[0] {
+            if let Layer::Dense(l_hidden) = &model.layers[1] {
+                if let Layer::Dense(l_output) = &model.layers[2] {
+                    let nf = get_nf();
+                    let m = get_m();
+                    let x = get_x();
+                    let y = get_y();
 
-        let nf = get_nf();
-        let m = get_m();
-        let x = get_x();
-        let y = get_y();
+                    assert_eq!(l_input.n, nf);
+                    assert_eq!(l_input.a.rows(), x.rows());
+                    assert_eq!(l_input.a.cols(), x.cols());
 
-        assert_eq!(l_input.n, nf);
-        assert_eq!(l_input.a.rows(), x.rows());
-        assert_eq!(l_input.a.cols(), x.cols());
+                    assert_eq!(l_hidden.w.rows(), 4);
+                    assert_eq!(l_hidden.w.cols(), nf);
+                    assert_eq!(l_hidden.a.rows(), 4);
+                    assert_eq!(l_hidden.a.cols(), m);
+                    assert_eq!(l_hidden.z.rows(), 4);
+                    assert_eq!(l_hidden.z.cols(), m);
+                    assert_eq!(l_hidden.dz.rows(), 4);
+                    assert_eq!(l_hidden.dz.cols(), m);
 
-        assert_eq!(l_hidden.w.rows(), 4);
-        assert_eq!(l_hidden.w.cols(), nf);
-        assert_eq!(l_hidden.a.rows(), 4);
-        assert_eq!(l_hidden.a.cols(), m);
-        assert_eq!(l_hidden.z.rows(), 4);
-        assert_eq!(l_hidden.z.cols(), m);
-        assert_eq!(l_hidden.dz.rows(), 4);
-        assert_eq!(l_hidden.dz.cols(), m);
-
-        assert_eq!(l_output.a.rows(), y.rows());
-        assert_eq!(l_output.a.cols(), y.cols());
+                    assert_eq!(l_output.a.rows(), y.rows());
+                    assert_eq!(l_output.a.cols(), y.cols());
+                }
+            }
+        }
     }
 
     #[test]
