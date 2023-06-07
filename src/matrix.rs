@@ -8,7 +8,7 @@ pub struct Matrix {
     data: Vec<Vec<f32>>
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Shape4 {
     data: Vec<Vec<Matrix>>
 }
@@ -198,13 +198,7 @@ impl Shape4 {
 
     pub fn flatten(&self) -> Vec<f32> {
         self.data.clone().into_iter().flatten()
-            .map(|m| m.flatten()).flatten().collect()
-    }
-}
-
-impl Default for Shape4 {
-    fn default() -> Self {
-        Self { data: Vec::new() }
+            .flat_map(|m| m.flatten()).collect()
     }
 }
 

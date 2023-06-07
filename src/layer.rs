@@ -97,7 +97,7 @@ impl Layer {
     pub fn to_dense(&self) -> &Dense {
         match self {
             Layer::Dense(d) => d,
-            Layer::Conv(c) => todo!()
+            Layer::Conv(_c) => todo!()
         }
     }
 }

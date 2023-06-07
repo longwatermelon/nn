@@ -37,7 +37,7 @@ impl Model {
     }
 
     pub fn from(path: &str) -> Self {
-        let mut file = File::open(path).expect(format!("File {} doesn't exist.", path).as_str());
+        let mut file = File::open(path).unwrap_or_else(|_| panic!("File {} doesn't exist.", path));
         let mut data: String = String::new();
         file.read_to_string(&mut data).unwrap();
 
@@ -82,7 +82,7 @@ impl Model {
                     d.adjust_dims(prev_n, x.cols());
                     prev_n = d.n;
                 },
-                Layer::Conv(c) => todo!()
+                Layer::Conv(_c) => todo!()
             }
         });
     }
@@ -95,7 +95,7 @@ impl Model {
 
             match l {
                 Layer::Dense(d) => d.forward_prop(back.to_dense(), x),
-                Layer::Conv(c) => todo!()
+                Layer::Conv(_c) => todo!()
             }
         }
     }
@@ -126,7 +126,7 @@ impl Model {
                         y
                     )
                 ),
-                Layer::Conv(c) => todo!()
+                Layer::Conv(_c) => todo!()
             };
         }
 
@@ -138,7 +138,7 @@ impl Model {
     fn preprare_layer0(&mut self, x: &Matrix) {
         match &mut self.layers[0] {
             Layer::Dense(d) => d.a = x.clone(),
-            Layer::Conv(c) => todo!()
+            Layer::Conv(_c) => todo!()
         }
     }
 
@@ -151,7 +151,7 @@ impl Model {
                     } else { 0 };
                     d.adjust_dims(prev_n, 1);
                 },
-                Layer::Conv(c) => todo!()
+                Layer::Conv(_c) => todo!()
             }
         }
 
