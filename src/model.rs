@@ -38,7 +38,7 @@ impl Model {
             self.forward_prop(x);
 
             if (i + 1) % 100 == 0 {
-                println!("Iteration {} | Cost {:.2}", i + 1, self.cost(&y));
+                println!("Iteration {} | Cost {}", i + 1, self.cost(&y));
             }
 
             self.back_prop(y, a);
@@ -140,19 +140,18 @@ impl Model {
 
         if let Some(last) = self.layers.last() {
             let d: &Dense = last.to_dense();
-            println!("{:?}", d.a);
             for r in 0..y.rows() {
                 for c in 0..y.cols() {
                     sum += y.at(r, c) * if d.a.at(r, c) == 0. {
                         0.
                     } else {
-                        f32::ln(d.a.at(r, c))
+                        f32::log10(d.a.at(r, c))
                     };
                 }
             }
         }
 
-        sum
+        -sum
     }
 }
 
