@@ -1,7 +1,11 @@
 use crate::layer::{Layer, Prop, Delta, Dense};
 use crate::matrix::Matrix;
 
+use serde::{Serialize, Deserialize};
+
 use std::fmt;
+use std::fs::File;
+use std::io::{Read, Write};
 
 #[derive(Debug)]
 pub struct Error {
@@ -20,6 +24,7 @@ impl fmt::Display for Error {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Model {
     layers: Vec<Layer>
 }
@@ -29,6 +34,14 @@ impl Model {
         Self {
             layers: Vec::new()
         }
+    }
+
+    pub fn from(path: &str) -> Self {
+        let mut file = File::open(path).expect(format!("File {} doesn't exist.", path).as_str());
+        let mut data: String = String::new();
+        file.read_to_string(&mut data).unwrap();
+
+        serde_json::from_str(data.as_str()).unwrap()
     }
 
     pub fn train(&mut self, x: &Matrix, y: &Matrix, epochs: usize, a: f32) {
@@ -52,6 +65,11 @@ impl Model {
         } else {
             Err(Error::new("no layers detected"))
         }
+    }
+
+    pub fn save(&self, path: &str) {
+        let mut file = File::create(path).unwrap();
+        file.write_all(serde_json::to_string(self).unwrap().as_bytes()).unwrap();
     }
 
     fn adjust_layer_dims(&mut self, x: &Matrix) {

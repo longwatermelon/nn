@@ -1,12 +1,14 @@
 use std::ops;
 use rand::Rng;
 
-#[derive(Clone, Debug, PartialEq)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Matrix {
     data: Vec<Vec<f32>>
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Shape4 {
     data: Vec<Vec<Matrix>>
 }

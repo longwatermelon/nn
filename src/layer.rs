@@ -1,6 +1,8 @@
 use crate::matrix::{Matrix, Shape4};
 
-#[derive(Clone)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Activation {
     Sigmoid,
     Linear,
@@ -8,7 +10,7 @@ pub enum Activation {
     Tanh
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Layer {
     Dense(Dense),
     Conv(Conv)
@@ -21,7 +23,7 @@ pub enum Delta {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Dense {
     pub n: usize,
     pub w: Matrix,
@@ -34,7 +36,7 @@ pub struct Dense {
     pub dz: Matrix
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conv {
     pub nc: usize,
     pub fh: usize,
