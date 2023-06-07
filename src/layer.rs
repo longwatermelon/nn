@@ -120,7 +120,7 @@ impl Prop for Dense {
 
             self.dz = left.element_wise_mul(right);
         } else {
-            self.dz = self.a.clone() - &y;
+            self.dz = self.a.clone() - y;
         }
 
         let dw: Matrix = self.dz.clone() * &back.a.transpose() * (1. / y.cols() as f32);

@@ -38,7 +38,7 @@ impl Model {
             self.forward_prop(x);
 
             if (i + 1) % 100 == 0 {
-                println!("Iteration {} | Cost {}", i + 1, self.cost(&y));
+                println!("Iteration {} | Cost {}", i + 1, self.cost(y));
             }
 
             self.back_prop(y, a);
@@ -69,13 +69,13 @@ impl Model {
     }
 
     fn forward_prop(&mut self, x: &Matrix) {
-        self.preprare_layer0(&x);
+        self.preprare_layer0(x);
 
         for i in 1..self.layers.len() {
             let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
 
             match l {
-                Layer::Dense(d) => d.forward_prop(back.to_dense(), &x)
+                Layer::Dense(d) => d.forward_prop(back.to_dense(), x)
             }
         }
     }
@@ -103,7 +103,7 @@ impl Model {
                         if let Some(f) = f {
                             Some(f.to_dense())
                         } else { None },
-                        &y
+                        y
                     )
                 )
             };
@@ -152,6 +152,12 @@ impl Model {
         }
 
         -sum
+    }
+}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

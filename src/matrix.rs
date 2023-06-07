@@ -124,7 +124,7 @@ impl ops::Mul<f32> for Matrix {
     type Output = Matrix;
 
     fn mul(self, rhs: f32) -> Matrix {
-        let mut res: Matrix = self.clone();
+        let mut res: Matrix = self;
 
         for r in 0..res.rows() {
             for c in 0..res.cols() {
