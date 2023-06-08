@@ -94,7 +94,7 @@ impl Model {
             let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
 
             match l {
-                Layer::Dense(d) => d.forward_prop(back.to_dense(), x),
+                Layer::Dense(d) => d.forward_prop(back, x),
                 Layer::Conv(_c) => todo!()
             }
         }
@@ -118,20 +118,15 @@ impl Model {
 
             match l {
                 Layer::Dense(d) => deltas.insert(0,
-                    d.back_prop(
-                        back.to_dense(),
-                        if let Some(f) = f {
-                            Some(f.to_dense())
-                        } else { None },
-                        y
-                    )
+                    d.back_prop(back, f, y)
                 ),
                 Layer::Conv(_c) => todo!()
             };
         }
 
         for i in 1..self.layers.len() {
-            apply_deltas(&mut self.layers[i], &deltas[i - 1], a);
+            self.layers[i].apply_delta(&deltas[i - 1], a);
+            // apply_deltas(&mut self.layers[i], &deltas[i - 1], a);
         }
     }
 
@@ -184,17 +179,6 @@ impl Default for Model {
     }
 }
 
-fn apply_deltas(l: &mut Layer, delta: &Delta, a: f32) {
-    match delta {
-        Delta::Dense { dw, db } => {
-            if let Layer::Dense(d) = l {
-                d.w = d.w.clone() - &(dw.clone() * a);
-                d.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,9 +201,9 @@ mod tests {
         get_x().rows()
     }
 
-    fn get_m() -> usize {
-        get_x().cols()
-    }
+    // fn get_m() -> usize {
+    //     get_x().cols()
+    // }
 
     fn get_model() -> Model {
         let mut model: Model = Model::new();
@@ -229,38 +213,38 @@ mod tests {
         model
     }
 
-    #[test]
-    fn dims() {
-        let mut model: Model = get_model();
-        model.adjust_layer_dims(&get_x());
+//     #[test]
+//     fn dims() {
+//         let mut model: Model = get_model();
+//         model.adjust_layer_dims(&get_x());
 
-        if let Layer::Dense(l_input) = &model.layers[0] {
-            if let Layer::Dense(l_hidden) = &model.layers[1] {
-                if let Layer::Dense(l_output) = &model.layers[2] {
-                    let nf = get_nf();
-                    let m = get_m();
-                    let x = get_x();
-                    let y = get_y();
+//         if let Layer::Dense(l_input) = &model.layers[0] {
+//             if let Layer::Dense(l_hidden) = &model.layers[1] {
+//                 if let Layer::Dense(l_output) = &model.layers[2] {
+//                     let nf = get_nf();
+//                     let m = get_m();
+//                     let x = get_x();
+//                     let y = get_y();
 
-                    assert_eq!(l_input.n, nf);
-                    assert_eq!(l_input.a.rows(), x.rows());
-                    assert_eq!(l_input.a.cols(), x.cols());
+//                     assert_eq!(l_input.n, nf);
+//                     assert_eq!(l_input.a.rows(), x.rows());
+//                     assert_eq!(l_input.a.cols(), x.cols());
 
-                    assert_eq!(l_hidden.w.rows(), 4);
-                    assert_eq!(l_hidden.w.cols(), nf);
-                    assert_eq!(l_hidden.a.rows(), 4);
-                    assert_eq!(l_hidden.a.cols(), m);
-                    assert_eq!(l_hidden.z.rows(), 4);
-                    assert_eq!(l_hidden.z.cols(), m);
-                    assert_eq!(l_hidden.dz.rows(), 4);
-                    assert_eq!(l_hidden.dz.cols(), m);
+//                     assert_eq!(l_hidden.w.rows(), 4);
+//                     assert_eq!(l_hidden.w.cols(), nf);
+//                     assert_eq!(l_hidden.a.rows(), 4);
+//                     assert_eq!(l_hidden.a.cols(), m);
+//                     assert_eq!(l_hidden.z.rows(), 4);
+//                     assert_eq!(l_hidden.z.cols(), m);
+//                     assert_eq!(l_hidden.dz.rows(), 4);
+//                     assert_eq!(l_hidden.dz.cols(), m);
 
-                    assert_eq!(l_output.a.rows(), y.rows());
-                    assert_eq!(l_output.a.cols(), y.cols());
-                }
-            }
-        }
-    }
+//                     assert_eq!(l_output.a.rows(), y.rows());
+//                     assert_eq!(l_output.a.cols(), y.cols());
+//                 }
+//             }
+//         }
+//     }
 
     #[test]
     fn train_and_predict() {

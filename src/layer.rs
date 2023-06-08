@@ -1,4 +1,4 @@
-use crate::matrix::{Matrix, Shape4};
+use crate::matrix::{Matrix, Shape4, Shape};
 
 use serde::{Serialize, Deserialize};
 
@@ -16,6 +16,11 @@ pub enum Layer {
     Conv(Conv)
 }
 
+pub enum Pooling {
+    Max{ w: usize, h: usize }
+}
+
+#[derive(Debug)]
 pub enum Delta {
     Dense {
         dw: Matrix,
@@ -26,37 +31,37 @@ pub enum Delta {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Dense {
     pub n: usize,
-    pub w: Matrix,
-    pub b: Vec<f32>,
-    pub afn: Activation,
+    w: Matrix,
+    b: Vec<f32>,
+    afn: Activation,
 
     pub a: Matrix,
-    pub z: Matrix,
+    z: Matrix,
 
-    pub dz: Matrix
+    dz: Matrix
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conv {
-    pub nc: usize,
-    pub fh: usize,
-    pub fw: usize,
-    pub s: usize,
-    pub afn: Activation,
+    nc: usize,
+    fh: usize,
+    fw: usize,
+    s: usize,
+    afn: Activation,
 
-    pub w: Shape4,
-    pub b: Vec<f32>,
+    w: Shape4,
+    b: Vec<f32>,
 
-    pub a: Shape4,
-    pub z: Shape4,
+    a: Shape4,
+    z: Shape4,
+    p: Shape4,
 
-    pub dz: Shape4
+    dz: Shape4
 }
 
 pub trait Prop {
-    type T;
-    fn forward_prop(&mut self, back: &Self::T, x: &Matrix);
-    fn back_prop(&mut self, back: &Self::T, front: Option<&Self::T>, y: &Matrix) -> Delta;
+    fn forward_prop(&mut self, back: &Layer, x: &Matrix);
+    fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta;
 }
 
 impl Activation {
@@ -100,6 +105,27 @@ impl Layer {
             Layer::Conv(_c) => todo!()
         }
     }
+
+    pub fn to_conv(&self) -> &Conv {
+        match self {
+            Layer::Dense(_d) => todo!(),
+            Layer::Conv(c) => c
+        }
+    }
+
+    pub fn apply_delta(&mut self, delta: &Delta, a: f32) {
+        match delta {
+            Delta::Dense { dw, db } => {
+                if let Layer::Dense(d) = self {
+                    d.w = d.w.clone() - &(dw.clone() * a);
+                    d.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
+                } else {
+                    panic!("Mismatch in delta and layer type: delta ({:?}) layer ({:?})",
+                           delta, self);
+                }
+            }
+        }
+    }
 }
 
 impl Dense {
@@ -138,26 +164,32 @@ impl Conv {
             b: Vec::new(),
             a: Shape4::default(),
             z: Shape4::default(),
+            p: Shape4::default(),
             dz: Shape4::default()
         }
     }
 }
 
 impl Prop for Dense {
-    type T = Dense;
-    fn forward_prop(&mut self, back: &Self::T, x: &Matrix) {
+    fn forward_prop(&mut self, back: &Layer, x: &Matrix) {
+        let bl: &Dense = back.to_dense();
+
         self.a = Matrix::new(self.n, x.cols());
         let afn = self.afn.getfn();
 
-        self.z = self.w.clone() * &back.a;
+        self.z = self.w.clone() * &bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
         self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
 
-    fn back_prop(&mut self, back: &Self::T, front: Option<&Self::T>, y: &Matrix) -> Delta {
+    fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
+        let bl: &Dense = back.to_dense();
+
         if let Some(front) = front {
+            let fl: &Dense = front.to_dense();
+
             let afn = self.afn.getfn_derivative();
-            let left: Matrix = front.w.transpose() * &front.dz;
+            let left: Matrix = fl.w.transpose() * &fl.dz;
             let right: Matrix = self.z.foreach(|r, c| afn(self.z.at(r, c)));
 
             self.dz = left.element_wise_mul(right);
@@ -165,7 +197,7 @@ impl Prop for Dense {
             self.dz = self.a.clone() - y;
         }
 
-        let dw: Matrix = self.dz.clone() * &back.a.transpose() * (1. / y.cols() as f32);
+        let dw: Matrix = self.dz.clone() * &bl.a.transpose() * (1. / y.cols() as f32);
         let mut db: Vec<f32> = Vec::with_capacity(self.dz.rows());
         for r in self.dz.data() {
             db.push(r.iter().sum());
@@ -174,6 +206,80 @@ impl Prop for Dense {
         Delta::Dense {
             dw, db
         }
+    }
+}
+
+impl Prop for Conv {
+    fn forward_prop(&mut self, back: &Layer, x: &Matrix) {
+        let m: usize = x.cols();
+        let bl: &Conv = back.to_conv();
+
+        for e in 0..m {
+            for n in 0..self.nc {
+                let z: Matrix = convolve(&bl.a, &self.w, e, n) +
+                                &Matrix::from(
+                                    vec![self.b.clone()]
+                                ).transpose();
+                *self.z.at_mut(e).at_mut(n) = z;
+            }
+        }
+
+        let afn = self.afn.getfn();
+        for (block, zblock) in self.a.data_mut()
+                                     .iter_mut()
+                                     .zip(self.z.data().iter()) {
+            for (channel, zchannel) in block.data_mut()
+                                            .iter_mut()
+                                            .zip(zblock.data().iter()) {
+                *channel = channel.foreach(|r, c| afn(zchannel.at(r, c)));
+            }
+        }
+    }
+
+    fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
+        match front.unwrap() {
+            // conv -> dense
+            Layer::Dense(fl) => {
+                let dlf: Matrix = fl.w.transpose() * &fl.dz;
+                let dlp: Shape4 = dlf.reshape_to4(self.p.shape());
+            },
+            // conv -> conv
+            Layer::Conv(fl) => {
+            }
+        }
+
+        todo!()
+    }
+}
+
+fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
+    let layers: Vec<Matrix> = input.at(e).data().iter()
+        .zip(filter.data().iter())
+        .map(|(a, w)| a.convolve(w.at(n)))
+        .collect();
+    layers.iter()
+        .fold(Matrix::new(layers[0].rows(), layers[0].cols()),
+            |sum, val| sum + val
+        )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn adjust_dims_dense() {
+        let mut dense: Dense = Dense::new(10, Activation::Linear);
+        dense.adjust_dims(5, 2);
+
+        assert_eq!(dense.w.rows(), 10);
+        assert_eq!(dense.w.cols(), 5);
+        assert_eq!(dense.a.rows(), 10);
+        assert_eq!(dense.a.cols(), 2);
+        assert_eq!(dense.z.rows(), 10);
+        assert_eq!(dense.z.cols(), 2);
+        assert_eq!(dense.dz.rows(), 10);
+        assert_eq!(dense.dz.cols(), 2);
     }
 }
 

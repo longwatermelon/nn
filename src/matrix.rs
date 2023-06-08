@@ -9,8 +9,23 @@ pub struct Matrix {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Shape3 {
+    data: Vec<Matrix>
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Shape4 {
-    data: Vec<Vec<Matrix>>
+    data: Vec<Shape3>
+}
+
+pub trait Shape {
+    type T;
+    type Enclosed;
+    fn flatten(&self) -> Vec<f32>;
+    fn at(&self, index: usize) -> &Self::Enclosed;
+    fn at_mut(&mut self, index: usize) -> &mut Self::Enclosed;
+    fn data(&self) -> &Vec<Self::Enclosed>;
+    fn data_mut(&mut self) -> &mut Vec<Self::Enclosed>;
 }
 
 impl Matrix {
@@ -47,6 +62,43 @@ impl Matrix {
         for r in 0..self.rows() {
             for c in 0..self.cols() {
                 *res.atref(c, r) = self.at(r, c);
+            }
+        }
+
+        res
+    }
+
+    pub fn convolve(&self, filter: &Matrix) -> Matrix {
+        let nh: usize = self.rows() - filter.rows() + 1;
+        let nw: usize = self.cols() - filter.cols() + 1;
+        let mut res: Matrix = Matrix::new(nh, nw);
+
+        for r in 0..res.rows() {
+            for c in 0..res.cols() {
+                *res.atref(r, c) = filter.foreach(
+                        |fr, fc| self.at(r + fr, c + fc) * filter.at(fr, fc))
+                    .flatten()
+                    .iter()
+                    .sum();
+            }
+        }
+
+        res
+    }
+
+    pub fn reshape_to4(&self, dims: (usize, usize, usize, usize)) -> Shape4 {
+        let flat: Vec<f32> = self.flatten();
+        let mut res: Shape4 = Shape4::new(dims.0, dims.1, dims.2, dims.3);
+        let mut index: usize = 0;
+
+        for i in 0..dims.0 {
+            for j in 0..dims.1 {
+                for k in 0..dims.2 {
+                    for l in 0..dims.3 {
+                        *res.at_mut(i).at_mut(j).atref(k, l) = flat[index];
+                        index += 1;
+                    }
+                }
             }
         }
 
@@ -185,20 +237,90 @@ impl ops::Sub<&Matrix> for Matrix {
     }
 }
 
+impl Shape3 {
+    pub fn new(channels: usize, rows: usize, cols: usize) -> Self {
+        Self {
+            data: vec![Matrix::new(rows, cols); channels]
+        }
+    }
+}
+
+impl Shape for Shape3 {
+    type T = Shape3;
+    type Enclosed = Matrix;
+    fn flatten(&self) -> Vec<f32> {
+        self.data.iter()
+                 .map(|x| x.flatten())
+                 .flatten()
+                 .collect()
+    }
+
+    fn at(&self, index: usize) -> &Matrix {
+        &self.data[index]
+    }
+
+    fn at_mut(&mut self, index: usize) -> &mut Matrix {
+        &mut self.data[index]
+    }
+
+    fn data(&self) -> &Vec<Matrix> {
+        &self.data
+    }
+
+    fn data_mut(&mut self) -> &mut Vec<Matrix> {
+        &mut self.data
+    }
+}
+
+impl From<Vec<Matrix>> for Shape3 {
+    fn from(data: Vec<Matrix>) -> Shape3 {
+        Shape3 { data }
+    }
+}
+
 impl Shape4 {
     pub fn new(blocks: usize, channels: usize, rows: usize, cols: usize) -> Self {
         Self {
-            data: vec![vec![Matrix::new(rows, cols); channels]; blocks]
+            data: vec![Shape3::new(channels, rows, cols); blocks]
         }
     }
 
-    pub fn from(data: Vec<Vec<Matrix>>) -> Self {
-        Self { data }
+    pub fn shape(&self) -> (usize, usize, usize, usize) {
+        (self.data.len(), self.data[0].data().len(),
+        self.data[0].data()[0].rows(), self.data[0].data()[0].cols())
+    }
+}
+
+impl Shape for Shape4 {
+    type T = Shape4;
+    type Enclosed = Shape3;
+    fn flatten(&self) -> Vec<f32> {
+        self.data.iter()
+                 .map(|x| x.flatten())
+                 .flatten()
+                 .collect()
     }
 
-    pub fn flatten(&self) -> Vec<f32> {
-        self.data.clone().into_iter().flatten()
-            .flat_map(|m| m.flatten()).collect()
+    fn at(&self, index: usize) -> &Shape3 {
+        &self.data[index]
+    }
+
+    fn at_mut(&mut self, index: usize) -> &mut Shape3 {
+        &mut self.data[index]
+    }
+
+    fn data(&self) -> &Vec<Shape3> {
+        &self.data
+    }
+
+    fn data_mut(&mut self) -> &mut Vec<Shape3> {
+        &mut self.data
+    }
+}
+
+impl From<Vec<Shape3>> for Shape4 {
+    fn from(data: Vec<Shape3>) -> Shape4 {
+        Shape4 { data }
     }
 }
 
@@ -327,7 +449,7 @@ mod tests {
     #[test]
     fn shape4_flatten() {
         let a: Shape4 = Shape4::from(vec![
-            vec![
+            Shape3::from(vec![
                 Matrix::from(vec![
                     vec![1., 2.],
                     vec![3., 4.]
@@ -336,8 +458,8 @@ mod tests {
                     vec![5., 6.],
                     vec![7., 8.]
                 ]),
-            ],
-            vec![
+            ]),
+            Shape3::from(vec![
                 Matrix::from(vec![
                     vec![9., 10.],
                     vec![11., 12.]
@@ -346,11 +468,51 @@ mod tests {
                     vec![13., 14.],
                     vec![15., 16.]
                 ]),
-            ]
+            ])
         ]);
 
         let v: Vec<f32> = a.flatten();
         assert_eq!(v, (1..=16).map(|x| x as f32).collect::<Vec<f32>>());
+    }
+
+    #[test]
+    fn convolution() {
+        let input: Matrix = Matrix::from(vec![
+            vec![1., 1., 1., 0., 0., 0.],
+            vec![1., 1., 1., 0., 0., 0.],
+            vec![1., 1., 1., 0., 0., 0.],
+            vec![1., 1., 1., 0., 0., 0.],
+            vec![1., 1., 1., 0., 0., 0.],
+            vec![1., 1., 1., 0., 0., 0.]
+        ]);
+
+        let filter: Matrix = Matrix::from(vec![
+            vec![1., 0., -1.],
+            vec![1., 0., -1.],
+            vec![1., 0., -1.]
+        ]);
+
+        let output: Matrix = input.convolve(&filter);
+        assert_eq!(output, Matrix::from(vec![
+            vec![0., 3., 3., 0.],
+            vec![0., 3., 3., 0.],
+            vec![0., 3., 3., 0.],
+            vec![0., 3., 3., 0.]
+        ]));
+    }
+
+    #[test]
+    fn reshape_to4() {
+        let input: Matrix = Matrix::from(vec![
+            vec![1., 2., 3.],
+            vec![4., 5., 6.],
+            vec![7., 8., 9.],
+            vec![10., 11., 12.],
+        ]);
+
+        let shape = (2, 2, 3, 1);
+        let reshaped: Shape4 = input.reshape_to4(shape);
+        assert_eq!(reshaped.flatten(), (1..=12).map(|x| x as f32).collect::<Vec<f32>>());
     }
 }
 
