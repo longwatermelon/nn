@@ -1,4 +1,4 @@
-use crate::matrix::{Matrix, Shape4, Shape};
+use crate::matrix::{Matrix, Shape3, Shape4, Shape};
 
 use serde::{Serialize, Deserialize};
 
@@ -16,8 +16,9 @@ pub enum Layer {
     Conv(Conv)
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Pooling {
-    Max{ w: usize, h: usize }
+    Max
 }
 
 #[derive(Debug)]
@@ -44,10 +45,14 @@ pub struct Dense {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conv {
     nc: usize,
+    nh: usize,
+    nw: usize,
     fh: usize,
     fw: usize,
-    s: usize,
+    ph: usize,
+    pw: usize,
     afn: Activation,
+    pooling: Pooling,
 
     w: Shape4,
     b: Vec<f32>,
@@ -55,6 +60,8 @@ pub struct Conv {
     a: Shape4,
     z: Shape4,
     p: Shape4,
+    row_maxes: Vec<Vec<Vec<Vec<usize>>>>,
+    col_maxes: Vec<Vec<Vec<Vec<usize>>>>,
 
     dz: Shape4
 }
@@ -95,8 +102,9 @@ impl Layer {
         Layer::Dense(Dense::new(n, afn))
     }
 
-    pub fn conv(filters: usize, fshape: (usize, usize), afn: Activation) -> Self {
-        Layer::Conv(Conv::new(filters, fshape, afn))
+    pub fn conv(filters: usize, fshape: (usize, usize),
+                afn: Activation, pooling: Pooling, pshape: (usize, usize)) -> Self {
+        Layer::Conv(Conv::new(filters, fshape, afn, pooling, pshape))
     }
 
     pub fn to_dense(&self) -> &Dense {
@@ -153,19 +161,94 @@ impl Dense {
 }
 
 impl Conv {
-    pub fn new(filters: usize, fshape: (usize, usize), afn: Activation) -> Self {
+    pub fn new(filters: usize, fshape: (usize, usize),
+               afn: Activation, pooling: Pooling, pshape: (usize, usize)) -> Self {
         Self {
             nc: filters,
+            nh: 0,
+            nw: 0,
             fh: fshape.0,
             fw: fshape.1,
-            s: 1,
+            ph: pshape.0,
+            pw: pshape.1,
             afn,
+            pooling,
             w: Shape4::default(),
             b: Vec::new(),
             a: Shape4::default(),
             z: Shape4::default(),
             p: Shape4::default(),
+            row_maxes: Vec::new(),
+            col_maxes: Vec::new(),
             dz: Shape4::default()
+        }
+    }
+
+    pub fn adjust_dims(&mut self, back_nc: usize, back_nw: usize, back_nh: usize, m: usize) {
+        self.nh = back_nh - self.fh + 1;
+        self.nw = back_nw - self.fw + 1;
+
+        self.w = Shape4::new(self.nc, back_nc, self.fh, self.fw);
+        self.b.resize(self.nc, 0.);
+
+        self.a = Shape4::new(m, self.nc, self.nh, self.nw);
+        self.z = self.a.clone();
+        self.dz = self.z.clone();
+
+        self.p = Shape4::new(
+            self.a.shape().0,
+            self.a.shape().1,
+            self.a.shape().2 / self.ph,
+            self.a.shape().3 / self.pw
+        );
+
+        self.row_maxes = vec![vec![vec![vec![0; self.p.shape().3];
+                        self.p.shape().2]; self.p.shape().1];
+                        self.p.shape().0];
+        self.col_maxes = self.row_maxes.clone();
+    }
+
+    fn pool(&mut self) {
+        match self.pooling {
+            Pooling::Max => {
+                for e in 0..self.p.shape().0 {
+                    for c in 0..self.p.shape().1 {
+                        for row in 0..self.p.shape().2 {
+                            for col in 0..self.p.shape().3 {
+                                self.pool_one(row, col, e, c);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn pool_one(&mut self, row: usize, col: usize, e: usize, c: usize) {
+        match self.pooling {
+            Pooling::Max => {
+                let mut largest: f32 = f32::NEG_INFINITY;
+                let mut index: (usize, usize) = (0, 0);
+
+                for dr in 0..self.ph {
+                    for dc in 0..self.pw {
+                        let i: (usize, usize) = (
+                            row * self.ph + dr,
+                            col * self.pw + dc
+                        );
+                        let a: f32 = self.a.at(e).at(c).at(i.0, i.1);
+
+                        if a > largest {
+                            largest = a;
+                            index = i;
+                        }
+                    }
+                }
+
+                *self.p.at_mut(e).at_mut(c).atref(row, col) = largest;
+                self.row_maxes[e][c][row][col] = index.0;
+                self.col_maxes[e][c][row][col] = index.1;
+            }
         }
     }
 }
@@ -280,6 +363,76 @@ mod tests {
         assert_eq!(dense.z.cols(), 2);
         assert_eq!(dense.dz.rows(), 10);
         assert_eq!(dense.dz.cols(), 2);
+    }
+
+    #[test]
+    fn adjust_dims_conv() {
+        let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
+                                       Pooling::Max, (2, 2));
+        conv.adjust_dims(3, 32, 32, 1);
+
+        assert_eq!(conv.a.shape(), (1, 6, 28, 28));
+        assert_eq!(conv.p.shape(), (1, 6, 14, 14));
+        assert_eq!(conv.w.shape(), (6, 3, 5, 5));
+    }
+
+    #[test]
+    fn conv_maxpool() {
+        let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
+                                       Pooling::Max, (2, 2));
+        conv.a = Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![1., 2., 3., 4.],
+                                vec![5., 6., 7., 8.],
+                                vec![9., 1., 2., 3.],
+                                vec![4., 5., 6., 7.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        );
+
+        conv.p = Shape4::new(
+            conv.a.shape().0,
+            conv.a.shape().1,
+            conv.a.shape().2 / conv.ph,
+            conv.a.shape().3 / conv.pw
+        );
+
+        conv.row_maxes = vec![vec![vec![vec![0; conv.p.shape().3];
+                        conv.p.shape().2]; conv.p.shape().1];
+                        conv.p.shape().0];
+        conv.col_maxes = conv.row_maxes.clone();
+        conv.pool();
+
+        assert_eq!(conv.row_maxes, vec![
+            vec![
+                vec![
+                    vec![1, 1],
+                    vec![2, 3]
+                ]
+            ]
+        ]);
+
+        assert_eq!(conv.p, Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![6., 8.],
+                                vec![9., 7.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        ));
     }
 }
 
