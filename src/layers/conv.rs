@@ -1,5 +1,5 @@
 use super::layer::*;
-use super::pool::{Pooling, PoolType};
+use super::pool::Pooling;
 use crate::matrix::{Matrix, Shape4, Shape};
 
 use serde::{Serialize, Deserialize};
@@ -82,7 +82,7 @@ impl Conv {
         }
     }
 
-    fn db(&self, front: &Layer) -> Vec<f32> {
+    fn db(&mut self, front: &Layer) -> Vec<f32> {
         match front {
             Layer::Dense(fl) => {
                 let dlf: Matrix = fl.w.transpose() * &fl.dz;
@@ -106,7 +106,7 @@ impl Conv {
                 }
 
                 let g_function = self.afn.getfn();
-                let dlz: Shape4 = dla.clone().zero()
+                self.dz = dla.clone().zero()
                     .foreach(|(e, n), m| {
                         m.foreach(|u, v| {
                             dla.at(e).at(n).at(u, v) *
@@ -115,12 +115,12 @@ impl Conv {
                     });
 
                 // Len n_c^l
-                let mut dlb: Vec<f32> = vec![0.; dlz.shape().1];
-                for e in 0..dlz.shape().0 {
-                    for u in 0..dlz.shape().2 {
-                        for v in 0..dlz.shape().3 {
+                let mut dlb: Vec<f32> = vec![0.; self.dz.shape().1];
+                for e in 0..self.dz.shape().0 {
+                    for u in 0..self.dz.shape().2 {
+                        for v in 0..self.dz.shape().3 {
                             dlb.iter_mut()
-                                .zip(dlz.at(e).data().iter())
+                                .zip(self.dz.at(e).data().iter())
                                 .for_each(|(b, z)| *b += z.at(u, v));
                         }
                     }
@@ -129,14 +129,60 @@ impl Conv {
                 dlb
             },
             Layer::Conv(fl) => {
-                todo!()
+                let gprime = self.afn.getfn_derivative();
+                let daz: Shape4 = self.z.foreach(|_, m|
+                    m.foreach(|i, j| gprime(m.at(i, j)))
+                );
+
+                let dzp: Shape4 = Shape4::new(self.nc, fl.nc, fl.fh, fl.fw)
+                    .foreach(|(c, n), m|
+                        m.foreach(|r, s| fl.w.at(n).at(c).at(r, s))
+                    );
+                let dlp: Shape4 = self.p.clone().zero()
+                    .foreach(|(e, c), m|
+                        m.foreach(|r, s|
+                            fl.dz.foreach(|(_, n), m|
+                                m.foreach(|u, v|
+                                    fl.dz.at(e).at(n).at(u, v) *
+                                    dzp.at(c).at(n).at(r, s)
+                                )
+                            ).sum()
+                        )
+                    );
+
+                let mut dla: Shape4 = self.a.clone().zero();
+                for e in 0..self.p.shape().0 {
+                    for c in 0..self.p.shape().1 {
+                        for r in 0..self.p.shape().2 {
+                            for s in 0..self.p.shape().3 {
+                                *dla.at_mut(e).at_mut(c).atref(
+                                    self.row_maxes[e][c][r][s],
+                                    self.col_maxes[e][c][r][s]
+                                ) = dlp.at(e).at(c).at(r, s);
+                            }
+                        }
+                    }
+                }
+
+                let mut dlb: Vec<f32> = vec![0.; self.nc];
+                for e in 0..dla.shape().0 {
+                    for c in 0..dlb.len() {
+                        for i in 0..self.nh {
+                            for j in 0..self.nw {
+                                dlb[c] = dla.at(e).at(c).at(i, j) * daz.at(e).at(c).at(i, j);
+                            }
+                        }
+                    }
+                }
+
+                dlb
             }
         }
     }
 
     fn dw(&self, bl: &Conv, front: &Layer, m: usize) -> Shape4 {
         match front {
-            Layer::Dense(fl) => {
+            Layer::Dense(_) => {
                 // dzw[p][q].at(e).at(c).at(u, v)
                 let dzw: Vec<Vec<Shape4>> = vec![
                     vec![

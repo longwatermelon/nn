@@ -334,6 +334,17 @@ impl Shape4 {
 
         res
     }
+
+    pub fn sum(&self) -> f32 {
+        let mut sum: f32 = 0.;
+        for block in 0..self.shape().0 {
+            for channel in 0..self.shape().1 {
+                sum += self.at(block).at(channel).sum();
+            }
+        }
+
+        sum
+    }
 }
 
 impl Shape for Shape4 {
@@ -560,13 +571,39 @@ mod tests {
     }
 
     #[test]
-    fn sum() {
+    fn matsum() {
         let m: Matrix = Matrix::from(vec![
             vec![1., 1., 1.],
             vec![2., 2., 2.]
         ]);
 
         assert_eq!(m.sum(), 9.);
+    }
+
+    #[test]
+    fn shape4sum() {
+        let s: Shape4 = Shape4::from(
+            vec![
+                Shape3::from(vec![
+                    Matrix::from(
+                        vec![
+                            vec![1., 2., 3.],
+                            vec![4., 5., 6.]
+                        ]
+                    )
+                ]),
+                Shape3::from(vec![
+                    Matrix::from(
+                        vec![
+                            vec![1., 2., 3.],
+                            vec![4., 5., 6.]
+                        ]
+                    )
+                ])
+            ]
+        );
+
+        assert_eq!(s.sum(), 42.);
     }
 }
 
