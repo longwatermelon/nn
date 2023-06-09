@@ -1,5 +1,4 @@
-use super::dense::Dense;
-use super::conv::{Conv, Pooling};
+use super::{dense::Dense, conv::Conv, pool::Pooling};
 use crate::matrix::{Matrix, Shape4};
 
 use serde::{Serialize, Deserialize};
@@ -67,8 +66,8 @@ impl Layer {
     }
 
     pub fn conv(filters: usize, fshape: (usize, usize),
-                afn: Activation, pooling: Pooling, pshape: (usize, usize)) -> Self {
-        Layer::Conv(Conv::new(filters, fshape, afn, pooling, pshape))
+                afn: Activation, pooling: Pooling) -> Self {
+        Layer::Conv(Conv::new(filters, fshape, afn, pooling))
     }
 
     pub fn to_dense(&self) -> &Dense {

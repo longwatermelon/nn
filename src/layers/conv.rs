@@ -1,12 +1,8 @@
 use super::layer::*;
+use super::pool::{Pooling, PoolType};
 use crate::matrix::{Matrix, Shape4, Shape};
 
 use serde::{Serialize, Deserialize};
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Pooling {
-    Max
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conv {
@@ -15,8 +11,6 @@ pub struct Conv {
     nw: usize,
     fh: usize,
     fw: usize,
-    ph: usize,
-    pw: usize,
     afn: Activation,
     pooling: Pooling,
 
@@ -33,16 +27,13 @@ pub struct Conv {
 }
 
 impl Conv {
-    pub fn new(filters: usize, fshape: (usize, usize),
-               afn: Activation, pooling: Pooling, pshape: (usize, usize)) -> Self {
+    pub fn new(filters: usize, fshape: (usize, usize), afn: Activation, pooling: Pooling) -> Self {
         Self {
             nc: filters,
             nh: 0,
             nw: 0,
             fh: fshape.0,
             fw: fshape.1,
-            ph: pshape.0,
-            pw: pshape.1,
             afn,
             pooling,
             w: Shape4::default(),
@@ -70,8 +61,8 @@ impl Conv {
         self.p = Shape4::new(
             self.a.shape().0,
             self.a.shape().1,
-            self.a.shape().2 / self.ph,
-            self.a.shape().3 / self.pw
+            self.a.shape().2 / self.pooling.h,
+            self.a.shape().3 / self.pooling.w
         );
 
         self.row_maxes = vec![vec![vec![vec![0; self.p.shape().3];
@@ -81,50 +72,17 @@ impl Conv {
     }
 
     fn pool(&mut self) {
-        match self.pooling {
-            Pooling::Max => {
-                for e in 0..self.p.shape().0 {
-                    for c in 0..self.p.shape().1 {
-                        for row in 0..self.p.shape().2 {
-                            for col in 0..self.p.shape().3 {
-                                self.pool_one(row, col, e, c);
-                            }
-                        }
-                    }
-                }
+        for e in 0..self.p.shape().0 {
+            for n in 0..self.p.shape().1 {
+                let (p, rm, cm) = self.pooling.pool(&self.a.at(e).at(n));
+                *self.p.at_mut(e).at_mut(n) = p.clone();
+                self.row_maxes[e][n] = rm.clone();
+                self.col_maxes[e][n] = cm.clone();
             }
         }
     }
 
-    fn pool_one(&mut self, row: usize, col: usize, e: usize, c: usize) {
-        match self.pooling {
-            Pooling::Max => {
-                let mut largest: f32 = f32::NEG_INFINITY;
-                let mut index: (usize, usize) = (0, 0);
-
-                for dr in 0..self.ph {
-                    for dc in 0..self.pw {
-                        let i: (usize, usize) = (
-                            row * self.ph + dr,
-                            col * self.pw + dc
-                        );
-                        let a: f32 = self.a.at(e).at(c).at(i.0, i.1);
-
-                        if a > largest {
-                            largest = a;
-                            index = i;
-                        }
-                    }
-                }
-
-                *self.p.at_mut(e).at_mut(c).atref(row, col) = largest;
-                self.row_maxes[e][c][row][col] = index.0;
-                self.col_maxes[e][c][row][col] = index.1;
-            }
-        }
-    }
-
-    fn db(&self, back: &Conv, front: &Layer) -> Vec<f32> {
+    fn db(&self, front: &Layer) -> Vec<f32> {
         match front {
             Layer::Dense(fl) => {
                 let dlf: Matrix = fl.w.transpose() * &fl.dz;
@@ -259,7 +217,7 @@ impl Prop for Conv {
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
         Delta::Conv {
             dw: self.dw(back.to_conv(), front.unwrap(), y.cols()),
-            db: self.db(back.to_conv(), front.unwrap())
+            db: self.db(front.unwrap())
         }
     }
 }
@@ -283,7 +241,7 @@ mod tests {
     #[test]
     fn adjust_dims_conv() {
         let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
-                                       Pooling::Max, (2, 2));
+                                       Pooling::new(PoolType::Max, 2, 2));
         conv.adjust_dims(3, 32, 32, 1);
 
         assert_eq!(conv.a.shape(), (1, 6, 28, 28));
@@ -294,7 +252,7 @@ mod tests {
     #[test]
     fn conv_maxpool() {
         let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
-                                       Pooling::Max, (2, 2));
+                                        Pooling::new(PoolType::Max, 2, 2));
         conv.a = Shape4::from(
             vec![
                 Shape3::from(
@@ -315,8 +273,8 @@ mod tests {
         conv.p = Shape4::new(
             conv.a.shape().0,
             conv.a.shape().1,
-            conv.a.shape().2 / conv.ph,
-            conv.a.shape().3 / conv.pw
+            conv.a.shape().2 / conv.pooling.h,
+            conv.a.shape().3 / conv.pooling.w
         );
 
         conv.row_maxes = vec![vec![vec![vec![0; conv.p.shape().3];

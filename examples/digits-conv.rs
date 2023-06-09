@@ -1,5 +1,5 @@
 use nn::model::Model;
-use nn::layers::{Layer, Activation, conv::Pooling};
+use nn::layers::{Layer, Activation, pool::{Pooling, PoolType}};
 use nn::matrix::Matrix;
 
 use image::{DynamicImage, GenericImageView};
@@ -69,8 +69,8 @@ fn main() {
 
         let mut model: Model = Model::new();
         model.add(Layer::dense(x.rows(), Activation::Linear));
-        model.add(Layer::conv(6, (5, 5), Activation::Sigmoid, Pooling::Max, (2, 2)));
-        model.add(Layer::conv(16, (5, 5), Activation::Sigmoid, Pooling::Max, (2, 2)));
+        model.add(Layer::conv(6, (5, 5), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
+        model.add(Layer::conv(16, (5, 5), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
         model.add(Layer::dense(400, Activation::Sigmoid));
         model.add(Layer::dense(120, Activation::Sigmoid));
         model.add(Layer::dense(50, Activation::Sigmoid));
