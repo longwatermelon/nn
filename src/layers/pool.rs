@@ -27,15 +27,9 @@ impl Pooling {
 
                 for r in 0..res.rows() {
                     for c in 0..res.cols() {
-                        self.pool_one(&input, &mut res, &mut row_maxes, &mut col_maxes, r, c);
+                        self.pool_one(input, &mut res, &mut row_maxes, &mut col_maxes, r, c);
                     }
                 }
-                // let _ = (0..res.rows()).zip(0..res.cols())
-                //     .map(|(r, c)|
-                //         self.pool_one(
-                //             &mut res, &mut row_maxes, &mut col_maxes,
-                //             r, c)
-                //     ).collect::<()>();
 
                 (res, row_maxes, col_maxes)
             }
@@ -43,7 +37,7 @@ impl Pooling {
     }
 
     fn pool_one(&self, input: &Matrix, res: &mut Matrix,
-                row_maxes: &mut Vec<Vec<usize>>, col_maxes: &mut Vec<Vec<usize>>,
+                row_maxes: &mut [Vec<usize>], col_maxes: &mut [Vec<usize>],
                 row: usize, col: usize) {
         match self.ptype {
             PoolType::Max => {

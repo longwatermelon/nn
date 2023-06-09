@@ -74,7 +74,7 @@ impl Conv {
     fn pool(&mut self) {
         for e in 0..self.p.shape().0 {
             for n in 0..self.p.shape().1 {
-                let (p, rm, cm) = self.pooling.pool(&self.a.at(e).at(n));
+                let (p, rm, cm) = self.pooling.pool(self.a.at(e).at(n));
                 *self.p.at_mut(e).at_mut(n) = p.clone();
                 self.row_maxes[e][n] = rm.clone();
                 self.col_maxes[e][n] = cm.clone();
@@ -143,9 +143,9 @@ impl Conv {
                         Shape4::new(m, bl.nc, self.nh, self.nw); self.fh
                     ]; self.fw
                 ];
-                for p in 0..self.fh {
-                    for q in 0..self.fw {
-                        dzw[p][q].foreach(|(e, c), m|
+                for (p, dzw_p) in dzw.iter().enumerate().take(self.fh) {
+                    for (q, dzw_pq) in dzw_p.iter().enumerate().take(self.fw) {
+                        dzw_pq.foreach(|(e, c), m|
                             m.foreach(|u, v|
                                 bl.p.at(e).at(c).at(p + u, q + v)
                             )
@@ -153,7 +153,8 @@ impl Conv {
                     }
                 }
 
-                Shape4::from_1d(&(0..self.nc)
+                Shape4::from_1d(
+                    (0..self.nc)
                     .zip(0..bl.nc)
                     .zip(0..self.fh)
                     .zip(0..self.fw)
@@ -161,7 +162,9 @@ impl Conv {
                             self.dz.at(e).at(n)
                                 .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
                         ).sum()
-                    }).collect(), (self.nc, bl.nc, self.fh, self.fw))
+                    }).collect::<Vec<f32>>().as_slice(),
+                    (self.nc, bl.nc, self.fh, self.fw)
+                )
             },
             Layer::Conv(fl) => {
                 todo!()
@@ -175,7 +178,7 @@ impl Conv {
                 self.w = dw.foreach(
                     |_, m| m.clone() * a
                 ).foreach(
-                    |(ex, ch), m| self.w.at(ex).at(ch).clone() - &m
+                    |(ex, ch), m| self.w.at(ex).at(ch).clone() - m
                 );
 
                 self.b.iter_mut().zip(db.iter()).for_each(|(b, db)| *b *= db);

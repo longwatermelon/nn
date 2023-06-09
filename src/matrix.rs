@@ -256,8 +256,7 @@ impl Shape for Shape3 {
     type Enclosed = Matrix;
     fn flatten(&self) -> Vec<f32> {
         self.data.iter()
-                 .map(|x| x.flatten())
-                 .flatten()
+                 .flat_map(|x| x.flatten())
                  .collect()
     }
 
@@ -291,7 +290,7 @@ impl Shape4 {
         }
     }
 
-    pub fn from_1d(data: &Vec<f32>, shape: (usize, usize, usize, usize)) -> Self {
+    pub fn from_1d(data: &[f32], shape: (usize, usize, usize, usize)) -> Self {
         let mut index: usize = 0;
         let mut res: Shape4 = Shape4::new(shape.0, shape.1, shape.2, shape.3);
         for b in 0..shape.0 {
@@ -342,8 +341,7 @@ impl Shape for Shape4 {
     type Enclosed = Shape3;
     fn flatten(&self) -> Vec<f32> {
         self.data.iter()
-                 .map(|x| x.flatten())
-                 .flatten()
+                 .flat_map(|x| x.flatten())
                  .collect()
     }
 
