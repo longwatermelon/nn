@@ -269,6 +269,93 @@ impl Conv {
             }
         }
     }
+
+    fn db(&self, back: &Conv, front: &Layer) -> Vec<f32> {
+        match front {
+            Layer::Dense(fl) => {
+                let dlf: Matrix = fl.w.transpose() * &fl.dz;
+                let dlp: Shape4 = dlf.reshape_to4(self.p.shape());
+
+                let mut dla: Shape4 = self.a.clone().zero();
+                for e in 0..self.p.shape().0 {
+                    for n in 0..self.p.shape().1 {
+                        for y in 0..self.p.shape().2 {
+                            for x in 0..self.p.shape().3 {
+                                let (umax, vmax) = (
+                                    self.row_maxes[e][n][y][x],
+                                    self.col_maxes[e][n][y][x]
+                                );
+
+                                *dla.at_mut(e).at_mut(n).atref(umax, vmax)
+                                    = dlp.at(e).at(n).at(y, x);
+                            }
+                        }
+                    }
+                }
+
+                let g_function = self.afn.getfn();
+                let dlz: Shape4 = dla.clone().zero()
+                    .foreach(|(e, n), m| {
+                        m.foreach(|u, v| {
+                            dla.at(e).at(n).at(u, v) *
+                            g_function(self.z.at(e).at(n).at(u, v))
+                        })
+                    });
+
+                // Len n_c^l
+                let mut dlb: Vec<f32> = vec![0.; dlz.shape().1];
+                for e in 0..dlz.shape().0 {
+                    for u in 0..dlz.shape().2 {
+                        for v in 0..dlz.shape().3 {
+                            dlb.iter_mut()
+                                .zip(dlz.at(e).data().iter())
+                                .for_each(|(b, z)| *b += z.at(u, v));
+                        }
+                    }
+                }
+
+                dlb
+            },
+            Layer::Conv(fl) => {
+                todo!()
+            }
+        }
+    }
+
+    fn dw(&self, bl: &Conv, front: &Layer, m: usize) -> Shape4 {
+        match front {
+            Layer::Dense(fl) => {
+                // dzw[p][q].at(e).at(c).at(u, v)
+                let dzw: Vec<Vec<Shape4>> = vec![
+                    vec![
+                        Shape4::new(m, bl.nc, self.nh, self.nw); self.fh
+                    ]; self.fw
+                ];
+                for p in 0..self.fh {
+                    for q in 0..self.fw {
+                        dzw[p][q].foreach(|(e, c), m|
+                            m.foreach(|u, v|
+                                bl.p.at(e).at(c).at(p + u, q + v)
+                            )
+                        );
+                    }
+                }
+
+                Shape4::from_1d(&(0..self.nc)
+                    .zip(0..bl.nc)
+                    .zip(0..self.fh)
+                    .zip(0..self.fw)
+                    .map(|(((n, c), p), q)| -> f32 { (0..m).map(|e|
+                            self.dz.at(e).at(n)
+                                .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
+                        ).sum()
+                    }).collect(), (self.nc, bl.nc, self.fh, self.fw))
+            },
+            Layer::Conv(fl) => {
+                todo!()
+            }
+        }
+    }
 }
 
 impl Prop for Dense {
@@ -340,89 +427,9 @@ impl Prop for Conv {
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
-        match front.unwrap() {
-            // conv -> dense
-            Layer::Dense(fl) => {
-                // db
-                let dlf: Matrix = fl.w.transpose() * &fl.dz;
-                let dlp: Shape4 = dlf.reshape_to4(self.p.shape());
-
-                let mut dla: Shape4 = self.a.clone().zero();
-                for e in 0..self.p.shape().0 {
-                    for n in 0..self.p.shape().1 {
-                        for y in 0..self.p.shape().2 {
-                            for x in 0..self.p.shape().3 {
-                                let (umax, vmax) = (
-                                    self.row_maxes[e][n][y][x],
-                                    self.col_maxes[e][n][y][x]
-                                );
-
-                                *dla.at_mut(e).at_mut(n).atref(umax, vmax)
-                                    = dlp.at(e).at(n).at(y, x);
-                            }
-                        }
-                    }
-                }
-
-                let g_function = self.afn.getfn();
-                let dlz: Shape4 = dla.clone().zero()
-                    .foreach(|(e, n), m| {
-                        m.foreach(|u, v| {
-                            dla.at(e).at(n).at(u, v) *
-                            g_function(self.z.at(e).at(n).at(u, v))
-                        })
-                    });
-
-                // Len n_c^l
-                let mut dlb: Vec<f32> = vec![0.; dlz.shape().1];
-                for e in 0..dlz.shape().0 {
-                    for u in 0..dlz.shape().2 {
-                        for v in 0..dlz.shape().3 {
-                            dlb.iter_mut()
-                                .zip(dlz.at(e).data().iter())
-                                .for_each(|(b, z)| *b += z.at(u, v));
-                        }
-                    }
-                }
-
-                // dw
-                let bl: &Conv = back.to_conv();
-
-                // dzw[p][q].at(e).at(c).at(u, v)
-                let dzw: Vec<Vec<Shape4>> = vec![
-                    vec![
-                        Shape4::new(y.cols(), bl.nc, self.nh, self.nw); self.fh
-                    ]; self.fw
-                ];
-                for p in 0..self.fh {
-                    for q in 0..self.fw {
-                        dzw[p][q].foreach(|(e, c), m|
-                            m.foreach(|u, v|
-                                bl.p.at(e).at(c).at(p + u, q + v)
-                            )
-                        );
-                    }
-                }
-
-                let dlw: Shape4 = Shape4::from_1d(&(0..self.nc)
-                    .zip(0..bl.nc)
-                    .zip(0..self.fh)
-                    .zip(0..self.fw)
-                    .map(|(((n, c), p), q)| -> f32 { (0..y.cols()).map(|e|
-                            dlz.at(e).at(n)
-                                .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
-                        ).sum()
-                    }).collect(), (self.nc, bl.nc, self.fh, self.fw));
-
-                Delta::Conv {
-                    dw: dlw,
-                    db: dlb
-                }
-            },
-            // conv -> conv
-            Layer::Conv(fl) => {
-                todo!()
-            }
+        Delta::Conv {
+            dw: self.dw(back.to_conv(), front.unwrap(), y.cols()),
+            db: self.db(back.to_conv(), front.unwrap())
         }
     }
 }
