@@ -143,6 +143,12 @@ impl Matrix {
         self.data.clone().into_iter().flatten().collect()
     }
 
+    pub fn sum(&self) -> f32 {
+        self.data.iter()
+            .flatten()
+            .fold(0., |acc, &x| acc + x)
+    }
+
     pub fn check_valid(&self, row: usize, col: usize) {
         if row >= self.rows() || col >= self.cols() {
             panic!(
@@ -285,9 +291,49 @@ impl Shape4 {
         }
     }
 
+    pub fn from_1d(data: &Vec<f32>, shape: (usize, usize, usize, usize)) -> Self {
+        let mut index: usize = 0;
+        let mut res: Shape4 = Shape4::new(shape.0, shape.1, shape.2, shape.3);
+        for b in 0..shape.0 {
+            for c in 0..shape.1 {
+                for i in 0..shape.2 {
+                    for j in 0..shape.3 {
+                        *res.at_mut(b).at_mut(c).atref(i, j) = data[index];
+                        index += 1;
+                    }
+                }
+            }
+        }
+
+        res
+    }
+
     pub fn shape(&self) -> (usize, usize, usize, usize) {
         (self.data.len(), self.data[0].data().len(),
         self.data[0].data()[0].rows(), self.data[0].data()[0].cols())
+    }
+
+    pub fn zero(&self) -> Self {
+        let mut res: Shape4 = self.clone();
+
+        for i in 0..self.shape().0 {
+            for j in 0..self.shape().1 {
+                *res.data[i].at_mut(j) = self.data[i].at(j).foreach(|_, _| 0.);
+            }
+        }
+
+        res
+    }
+
+    pub fn foreach(&self, f: impl Fn((usize, usize), &Matrix) -> Matrix) -> Self {
+        let mut res: Shape4 = self.clone();
+        for block in 0..self.shape().0 {
+            for channel in 0..self.shape().1 {
+                *res.at_mut(block).at_mut(channel) = f((block, channel), res.at(block).at(channel));
+            }
+        }
+
+        res
     }
 }
 
@@ -513,6 +559,16 @@ mod tests {
         let shape = (2, 2, 3, 1);
         let reshaped: Shape4 = input.reshape_to4(shape);
         assert_eq!(reshaped.flatten(), (1..=12).map(|x| x as f32).collect::<Vec<f32>>());
+    }
+
+    #[test]
+    fn sum() {
+        let m: Matrix = Matrix::from(vec![
+            vec![1., 1., 1.],
+            vec![2., 2., 2.]
+        ]);
+
+        assert_eq!(m.sum(), 9.);
     }
 }
 
