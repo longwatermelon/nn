@@ -1,4 +1,4 @@
-pub mod layer;
+pub mod layers;
 pub mod model;
 pub mod matrix;
 

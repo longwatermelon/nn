@@ -1,4 +1,4 @@
-use crate::layer::{Layer, Prop, Delta, Dense};
+use crate::layers::{Layer, Prop, Delta, dense::Dense};
 use crate::matrix::Matrix;
 
 use serde::{Serialize, Deserialize};
@@ -126,7 +126,6 @@ impl Model {
 
         for i in 1..self.layers.len() {
             self.layers[i].apply_delta(&deltas[i - 1], a);
-            // apply_deltas(&mut self.layers[i], &deltas[i - 1], a);
         }
     }
 
@@ -182,7 +181,7 @@ impl Default for Model {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layer::Activation;
+    use crate::layers::Activation;
 
     fn get_x() -> Matrix {
         Matrix::from(vec![

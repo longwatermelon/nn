@@ -1,5 +1,5 @@
 use nn::model::Model;
-use nn::layer::{Layer, Activation};
+use nn::layers::{Layer, Activation};
 use nn::matrix::Matrix;
 
 use image::{DynamicImage, GenericImageView};

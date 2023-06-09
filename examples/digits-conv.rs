@@ -1,5 +1,5 @@
 use nn::model::Model;
-use nn::layer::{Layer, Activation, Pooling};
+use nn::layers::{Layer, Activation, conv::Pooling};
 use nn::matrix::Matrix;
 
 use image::{DynamicImage, GenericImageView};
