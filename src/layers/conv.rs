@@ -212,8 +212,35 @@ impl Conv {
                     (self.nc, bl.nc, self.fh, self.fw)
                 )
             },
-            Layer::Conv(fl) => {
-                todo!()
+            Layer::Conv(_) => {
+                // dzw[p][q].at(e).at(c).at(u, v)
+                let dzw: Vec<Vec<Shape4>> = vec![
+                    vec![
+                        Shape4::new(m, bl.nc, self.nh, self.nw); self.fh
+                    ]; self.fw
+                ];
+                for (p, dzw_p) in dzw.iter().enumerate().take(self.fh) {
+                    for (q, dzw_pq) in dzw_p.iter().enumerate().take(self.fw) {
+                        dzw_pq.foreach(|(e, c), m|
+                            m.foreach(|u, v|
+                                bl.a.at(e).at(c).at(p + u, q + v)
+                            )
+                        );
+                    }
+                }
+
+                Shape4::from_1d(
+                    (0..self.nc)
+                    .zip(0..bl.nc)
+                    .zip(0..self.fh)
+                    .zip(0..self.fw)
+                    .map(|(((n, c), p), q)| -> f32 { (0..m).map(|e|
+                            self.dz.at(e).at(n)
+                                .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
+                        ).sum()
+                    }).collect::<Vec<f32>>().as_slice(),
+                    (self.nc, bl.nc, self.fh, self.fw)
+                )
             }
         }
     }
