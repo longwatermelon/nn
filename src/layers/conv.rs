@@ -17,7 +17,7 @@ pub struct Conv {
     w: Shape4,
     b: Vec<f32>,
 
-    a: Shape4,
+    pub(crate) a: Shape4,
     z: Shape4,
     p: Shape4,
     row_maxes: Vec<Vec<Vec<Vec<usize>>>>,
@@ -47,7 +47,12 @@ impl Conv {
         }
     }
 
-    pub fn adjust_dims(&mut self, back_nc: usize, back_nw: usize, back_nh: usize, m: usize) {
+    pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
+        let (back_nc, back_nh, back_nw) = match bl {
+            Layer::Dense(_) => panic!("Dense -> Conv is unsupported."),
+            Layer::Conv(c) => (c.nc, c.nh, c.nw)
+        };
+
         self.nh = back_nh - self.fh + 1;
         self.nw = back_nw - self.fw + 1;
 
@@ -284,12 +289,20 @@ fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
 mod tests {
     use super::*;
     use crate::matrix::Shape3;
+    use super::super::pool::PoolType;
 
     #[test]
     fn adjust_dims_conv() {
         let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
                                        Pooling::new(PoolType::Max, 2, 2));
-        conv.adjust_dims(3, 32, 32, 1);
+        let mut bl: Layer = Layer::conv(3, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
+        if let Layer::Conv(bl) = bl {
+            bl.nh = 32;
+            bl.nw = 32;
+            bl.nc = 3;
+        }
+
+        conv.adjust_dims(&bl, 1);
 
         assert_eq!(conv.a.shape(), (1, 6, 28, 28));
         assert_eq!(conv.p.shape(), (1, 6, 14, 14));

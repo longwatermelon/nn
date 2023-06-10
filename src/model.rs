@@ -74,17 +74,15 @@ impl Model {
 
     fn adjust_layer_dims(&mut self, x: &Matrix) {
         self.preprare_layer0(x);
-        let mut prev_n: usize = x.rows();
 
-        self.layers.iter_mut().skip(1).for_each(|l: &mut Layer| {
+        for i in 1..self.layers.len() {
+            let [bl, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
+
             match l {
-                Layer::Dense(d) => {
-                    d.adjust_dims(prev_n, x.cols());
-                    prev_n = d.n;
-                },
-                Layer::Conv(_c) => todo!()
+                Layer::Dense(d) => d.adjust_dims(bl, x.cols()),
+                Layer::Conv(c) => c.adjust_dims(bl, x.cols())
             }
-        });
+        }
     }
 
     fn forward_prop(&mut self, x: &Matrix) {
@@ -140,10 +138,9 @@ impl Model {
         if !self.layers.is_empty() {
             match &mut l {
                 Layer::Dense(d) => {
-                    let prev_n: usize = if let Some(last) = self.layers.last() {
-                        last.to_dense().n
-                    } else { 0 };
-                    d.adjust_dims(prev_n, 1);
+                    if let Some(last) = self.layers.last() {
+                        d.adjust_dims(last, 1);
+                    };
                 },
                 Layer::Conv(_c) => todo!()
             }

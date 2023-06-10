@@ -1,5 +1,5 @@
 use super::layer::*;
-use crate::matrix::Matrix;
+use crate::matrix::{Matrix, Shape};
 
 use serde::{Serialize, Deserialize};
 
@@ -29,7 +29,12 @@ impl Dense {
         }
     }
 
-    pub fn adjust_dims(&mut self, back_n: usize, m: usize) {
+    pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
+        let back_n: usize = match bl {
+            Layer::Dense(d) => d.n,
+            Layer::Conv(c) => c.a.flatten().len()
+        };
+
         self.w = Matrix::new(self.n, back_n);
         self.w.random_init(-0.2, 0.2);
         self.b.resize(self.n, 0.);
