@@ -39,6 +39,19 @@ impl Matrix {
         Self { data }
     }
 
+    pub fn from_1d(data: &[f32], rows: usize, cols: usize) -> Self {
+        let mut index: usize = 0;
+        let mut res: Matrix = Matrix::new(rows, cols);
+        for r in 0..rows {
+            for c in 0..cols {
+                *res.atref(r, c) = data[index];
+                index += 1;
+            }
+        }
+
+        res
+    }
+
     pub fn random_init(&mut self, lower: f32, upper: f32) {
         *self = self.foreach(
             |_, _| rand::thread_rng().gen_range(0..1000) as f32 / 1000. *

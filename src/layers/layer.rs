@@ -1,5 +1,6 @@
 use super::{dense::Dense, conv::Conv, pool::Pooling};
 use crate::matrix::{Matrix, Shape4};
+use crate::model::Input;
 
 use serde::{Serialize, Deserialize};
 
@@ -30,7 +31,7 @@ pub enum Layer {
 }
 
 pub trait Prop {
-    fn forward_prop(&mut self, back: &Layer, x: &Matrix);
+    fn forward_prop(&mut self, back: &Layer, x: &Input);
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta;
 }
 

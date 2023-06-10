@@ -1,4 +1,4 @@
-use nn::model::Model;
+use nn::model::{Model, Input};
 use nn::layers::{Layer, Activation};
 use nn::matrix::Matrix;
 
@@ -32,11 +32,11 @@ fn main() {
         );
 
         let pred0: f32 = model.predict(
-            &Matrix::from(vec![example0]).transpose()
+            &Input::Dense(Matrix::from(vec![example0]).transpose())
         ).unwrap()[0];
 
         let pred1: f32 = model.predict(
-            &Matrix::from(vec![example1]).transpose()
+            &Input::Dense(Matrix::from(vec![example1]).transpose())
         ).unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
@@ -65,10 +65,10 @@ fn main() {
             *y.atref(0, i + 10) = 1.;
         }
 
-        let x: Matrix = Matrix::from(images).transpose();
+        let x: Input = Input::Dense(Matrix::from(images).transpose());
 
         let mut model: Model = Model::new();
-        model.add(Layer::dense(x.rows(), Activation::Linear));
+        model.add(Layer::dense(x.to_dense().rows(), Activation::Linear));
         model.add(Layer::dense(25, Activation::Sigmoid));
         model.add(Layer::dense(15, Activation::Sigmoid));
         model.add(Layer::dense(1, Activation::Sigmoid));

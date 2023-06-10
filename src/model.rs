@@ -1,5 +1,5 @@
 use crate::layers::{Layer, Prop, Delta, dense::Dense};
-use crate::matrix::Matrix;
+use crate::matrix::{Matrix, Shape4, Shape};
 
 use serde::{Serialize, Deserialize};
 
@@ -18,15 +18,41 @@ impl Error {
     }
 }
 
+pub enum Input {
+    Dense(Matrix),
+    Conv(Shape4)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Model {
+    layers: Vec<Layer>
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.msg)
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Model {
-    layers: Vec<Layer>
+impl Input {
+    pub fn to_dense(&self) -> Matrix {
+        match self {
+            Input::Dense(a) => a.clone(),
+            Input::Conv(a) => {
+                let f: Vec<f32> = a.flatten();
+                Matrix::from_1d(f.as_slice(), f.len() / a.shape().0, a.shape().0)
+            }
+        }
+    }
+
+    /// Panics if self is not conv.
+    pub fn to_conv(&self) -> Shape4 {
+        if let Input::Conv(c) = self {
+            c.clone()
+        } else {
+            panic!("Dense -> Conv is unsupported.")
+        }
+    }
 }
 
 impl Model {
@@ -44,7 +70,7 @@ impl Model {
         serde_json::from_str(data.as_str()).unwrap()
     }
 
-    pub fn train(&mut self, x: &Matrix, y: &Matrix, epochs: usize, a: f32) {
+    pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32) {
         self.adjust_layer_dims(x);
 
         for i in 0..epochs {
@@ -58,7 +84,7 @@ impl Model {
         }
     }
 
-    pub fn predict(&mut self, x: &Matrix) -> Result<Vec<f32>, Error> {
+    pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {
         self.forward_prop(x);
         if let Some(last) = self.layers.last() {
             Ok(last.to_dense().a.extract_col(0))
@@ -72,21 +98,21 @@ impl Model {
         file.write_all(serde_json::to_string(self).unwrap().as_bytes()).unwrap();
     }
 
-    fn adjust_layer_dims(&mut self, x: &Matrix) {
-        self.preprare_layer0(x);
+    fn adjust_layer_dims(&mut self, x: &Input) {
+        self.prepare_layer0(x);
 
         for i in 1..self.layers.len() {
             let [bl, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
 
             match l {
-                Layer::Dense(d) => d.adjust_dims(bl, x.cols()),
-                Layer::Conv(c) => c.adjust_dims(bl, x.cols())
+                Layer::Dense(d) => d.adjust_dims(bl, x.to_dense().cols()),
+                Layer::Conv(c) => c.adjust_dims(bl, x.to_conv().shape().0)
             }
         }
     }
 
-    fn forward_prop(&mut self, x: &Matrix) {
-        self.preprare_layer0(x);
+    fn forward_prop(&mut self, x: &Input) {
+        self.prepare_layer0(x);
 
         for i in 1..self.layers.len() {
             let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
@@ -94,7 +120,7 @@ impl Model {
             match l {
                 Layer::Dense(d) => d.forward_prop(back, x),
                 Layer::Conv(c) => c.forward_prop(back, x)
-            }
+            };
         }
     }
 
@@ -129,10 +155,10 @@ impl Model {
         }
     }
 
-    fn preprare_layer0(&mut self, x: &Matrix) {
+    fn prepare_layer0(&mut self, x: &Input) {
         match &mut self.layers[0] {
-            Layer::Dense(d) => d.a = x.clone(),
-            Layer::Conv(_c) => todo!()
+            Layer::Dense(d) => d.a = x.to_dense().clone(),
+            Layer::Conv(c) => c.a = x.to_conv().clone()
         }
     }
 
@@ -171,11 +197,11 @@ mod tests {
     use super::*;
     use crate::layers::Activation;
 
-    fn get_x() -> Matrix {
-        Matrix::from(vec![
+    fn get_x() -> Input {
+        Input::Dense(Matrix::from(vec![
             vec![0., 0., 1., 1.],
             vec![1., 1., 0., 0.],
-        ])
+        ]))
     }
 
     fn get_y() -> Matrix {
@@ -185,7 +211,7 @@ mod tests {
     }
 
     fn get_nf() -> usize {
-        get_x().rows()
+        get_x().to_dense().rows()
     }
 
     // fn get_m() -> usize {
@@ -239,10 +265,10 @@ mod tests {
         model.train(&get_x(), &get_y(), 1000, 0.5);
 
         let prediction: f32 = model.predict(
-            &Matrix::from(vec![
+            &Input::Dense(Matrix::from(vec![
                 vec![0.],
                 vec![1.]
-            ])
+            ]))
         ).unwrap()[0];
 
         assert!(prediction > 0.5);

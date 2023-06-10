@@ -1,6 +1,7 @@
 use super::layer::*;
 use super::pool::Pooling;
 use crate::matrix::{Matrix, Shape4, Shape};
+use crate::model::Input;
 
 use serde::{Serialize, Deserialize};
 
@@ -50,7 +51,7 @@ impl Conv {
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let (back_nc, back_nh, back_nw) = match bl {
             Layer::Dense(_) => panic!("Dense -> Conv is unsupported."),
-            Layer::Conv(c) => (c.nc, c.nh, c.nw)
+            Layer::Conv(c) => (c.nc, c.a.shape().2, c.a.shape().3)
         };
 
         self.nh = back_nh - self.fh + 1;
@@ -238,13 +239,14 @@ impl Conv {
 }
 
 impl Prop for Conv {
-    fn forward_prop(&mut self, back: &Layer, x: &Matrix) {
-        let m: usize = x.cols();
+    fn forward_prop(&mut self, back: &Layer, x: &Input) {
+        let m: usize = x.to_conv().shape().0;
         let bl: &Conv = back.to_conv();
 
         for e in 0..m {
             for n in 0..self.nc {
-                let z: Matrix = convolve(&bl.a, &self.w, e, n) +
+                let convolved: Matrix = convolve(&bl.a, &self.w, e, n);
+                let z: Matrix = convolved +
                                 &Matrix::from(
                                     vec![self.b.clone()]
                                 ).transpose();
@@ -296,10 +298,8 @@ mod tests {
         let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
                                        Pooling::new(PoolType::Max, 2, 2));
         let mut bl: Layer = Layer::conv(3, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
-        if let Layer::Conv(bl) = bl {
-            bl.nh = 32;
-            bl.nw = 32;
-            bl.nc = 3;
+        if let Layer::Conv(bl) = &mut bl {
+            bl.a = Shape4::new(1, 3, 32, 32);
         }
 
         conv.adjust_dims(&bl, 1);

@@ -1,5 +1,6 @@
 use super::layer::*;
 use crate::matrix::{Matrix, Shape};
+use crate::model::Input;
 
 use serde::{Serialize, Deserialize};
 
@@ -56,10 +57,10 @@ impl Dense {
 }
 
 impl Prop for Dense {
-    fn forward_prop(&mut self, back: &Layer, x: &Matrix) {
+    fn forward_prop(&mut self, back: &Layer, x: &Input) {
         let bl: &Dense = back.to_dense();
 
-        self.a = Matrix::new(self.n, x.cols());
+        self.a = Matrix::new(self.n, x.to_dense().cols());
         let afn = self.afn.getfn();
 
         self.z = self.w.clone() * &bl.a;
@@ -101,7 +102,8 @@ mod tests {
     #[test]
     fn adjust_dims_dense() {
         let mut dense: Dense = Dense::new(10, Activation::Linear);
-        dense.adjust_dims(5, 2);
+        let bl: Layer = Layer::dense(5, Activation::Linear);
+        dense.adjust_dims(&bl, 2);
 
         assert_eq!(dense.w.rows(), 10);
         assert_eq!(dense.w.cols(), 5);
