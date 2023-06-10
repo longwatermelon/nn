@@ -93,7 +93,7 @@ impl Model {
 
             match l {
                 Layer::Dense(d) => d.forward_prop(back, x),
-                Layer::Conv(_c) => todo!()
+                Layer::Conv(c) => c.forward_prop(back, x)
             }
         }
     }
@@ -118,7 +118,9 @@ impl Model {
                 Layer::Dense(d) => deltas.insert(0,
                     d.back_prop(back, f, y)
                 ),
-                Layer::Conv(_c) => todo!()
+                Layer::Conv(c) => deltas.insert(0,
+                    c.back_prop(back, f, y)
+                )
             };
         }
 
@@ -134,18 +136,7 @@ impl Model {
         }
     }
 
-    pub fn add(&mut self, mut l: Layer) {
-        if !self.layers.is_empty() {
-            match &mut l {
-                Layer::Dense(d) => {
-                    if let Some(last) = self.layers.last() {
-                        d.adjust_dims(last, 1);
-                    };
-                },
-                Layer::Conv(_c) => todo!()
-            }
-        }
-
+    pub fn add(&mut self, l: Layer) {
         self.layers.push(l);
     }
 
