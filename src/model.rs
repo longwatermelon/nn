@@ -73,16 +73,10 @@ impl Model {
     pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32) {
         self.adjust_layer_dims(x);
 
-//         for (i, l) in self.layers.iter().enumerate() {
-//             if let Layer::Conv(l) = l {
-//                 println!("Layer {} | a = {:?}", i, l.a.shape());
-//             }
-//         }
-
         for i in 0..epochs {
             self.forward_prop(x);
 
-            if (i + 1) % 100 == 0 {
+            if (i + 1) % 10 == 0 {
                 println!("Iteration {} | Cost {}", i + 1, self.cost(y));
             }
 

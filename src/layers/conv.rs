@@ -54,6 +54,7 @@ impl Conv {
             Layer::Conv(c) => (c.nc, c.a.shape().2, c.a.shape().3)
         };
 
+        println!("{} {}", back_nh, self.fh);
         self.nh = back_nh - self.fh + 1;
         self.nw = back_nw - self.fw + 1;
 
@@ -140,21 +141,41 @@ impl Conv {
                     m.foreach(|i, j| gprime(m.at(i, j)))
                 );
 
-                let dzp: Shape4 = Shape4::new(self.nc, fl.nc, fl.fh, fl.fw)
-                    .foreach(|(c, n), m|
+                let dzp: Shape4 = Shape4::new(fl.nc, self.nc, fl.fh, fl.fw)
+                    .foreach(|(n, c), m|
                         m.foreach(|r, s| fl.w.at(n).at(c).at(r, s))
                     );
-                let dlp: Shape4 = self.p.clone().zero()
-                    .foreach(|(e, c), m|
-                        m.foreach(|r, s|
-                            fl.dz.foreach(|(_, n), m|
-                                m.foreach(|u, v|
-                                    fl.dz.at(e).at(n).at(u, v) *
-                                    dzp.at(c).at(n).at(r, s)
-                                )
-                            ).sum()
-                        )
-                    );
+                let mut dlp: Shape4 = self.p.clone().zero();
+                for e in 0..dlp.shape().0 {
+                    for c in 0..dlp.shape().1 {
+                        for r in 0..dlp.shape().2 {
+                            for s in 0..dlp.shape().3 {
+                                // dLP_ecrs
+                                for n in 0..fl.nc {
+                                    for u in 0..fl.nh {
+                                        for v in 0..fl.nw {
+                                            if r < dzp.shape().2 && s < dzp.shape().3 {
+                                                *dlp.at_mut(e).at_mut(c).atref(r, s) +=
+                                                    fl.dz.at(e).at(n).at(u, v) * dzp.at(n).at(c).at(r, s);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // let dlp: Shape4 = self.p.clone().zero()
+                //     .foreach(|(e, c), m|
+                //         m.foreach(|r, s|
+                //             fl.dz.foreach(|(_, n), m|
+                //                 m.foreach(|u, v|
+                //                     fl.dz.at(e).at(n).at(u, v) *
+                //                     dzp.at(c).at(n).at(r, s)
+                //                 )
+                //             ).sum()
+                //         )
+                //     );
 
                 let mut dla: Shape4 = self.a.clone().zero();
                 for e in 0..self.p.shape().0 {
@@ -208,18 +229,36 @@ impl Conv {
             }
         }
 
-        Shape4::from_1d(
-            (0..self.nc)
-            .zip(0..bl.nc)
-            .zip(0..self.fh)
-            .zip(0..self.fw)
-            .map(|(((n, c), p), q)| -> f32 { (0..m).map(|e|
-                    self.dz.at(e).at(n)
-                        .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
-                ).sum()
-            }).collect::<Vec<f32>>().as_slice(),
-            (self.nc, bl.nc, self.fh, self.fw)
-        )
+        let mut dlw: Shape4 = Shape4::new(self.nc, bl.nc, self.fh, self.fw);
+        for n in 0..self.nc {
+            for c in 0..bl.nc {
+                for p in 0..self.fh {
+                    for q in 0..self.fw {
+                        // dLW_ncpq
+                        for e in 0..m {
+                            *dlw.at_mut(n).at_mut(c).atref(p, q) +=
+                                (0..self.nh).zip(0..self.nw)
+                                .map(|(u, v)| self.dz.at(e).at(n).at(u, v) * dzw[p][q].at(e).at(c).at(u, v))
+                                .sum::<f32>();
+                        }
+                    }
+                }
+            }
+        }
+
+        dlw
+        // Shape4::from_1d(
+        //     (0..self.nc)
+        //     .zip(0..bl.nc)
+        //     .zip(0..self.fh)
+        //     .zip(0..self.fw)
+        //     .map(|(((n, c), p), q)| -> f32 { (0..m).map(|e|
+        //             self.dz.at(e).at(n)
+        //                 .element_wise_mul(dzw[p][q].at(e).at(c).clone()).sum()
+        //         ).sum()
+        //     }).collect::<Vec<f32>>().as_slice(),
+        //     (self.nc, bl.nc, self.fh, self.fw)
+        // )
     }
 
     pub fn apply_delta(&mut self, delta: &Delta, a: f32) {

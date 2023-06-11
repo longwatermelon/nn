@@ -1,5 +1,5 @@
 use super::layer::*;
-use crate::matrix::{Matrix, Shape};
+use crate::matrix::Matrix;
 use crate::model::Input;
 
 use serde::{Serialize, Deserialize};
@@ -63,7 +63,6 @@ impl Prop for Dense {
         self.a = Matrix::new(self.n, x.to_dense().cols());
         let afn = self.afn.getfn();
 
-        println!("{} {}", self.w.dims(), bl.a.dims());
         self.z = self.w.clone() * &bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
         self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));

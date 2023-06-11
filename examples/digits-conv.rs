@@ -54,30 +54,56 @@ fn main() {
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
         println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
     } else if args[0] == "train" {
-        let mut y: Matrix = Matrix::new(1, 20);
+        // let mut y: Matrix = Matrix::new(1, 20);
+        let mut y: Matrix = Matrix::new(1, 2);
 
         let mut images: Vec<Matrix> = Vec::new();
-        for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("data/digits/{}0.png", i)
-                ).unwrap())
-            );
+        images.push(Matrix::from(vec![
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.]
+        ]));
 
-            *y.atref(0, i) = 0.;
-        }
+        images.push(Matrix::from(vec![
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.]
+        ]));
 
-        for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("data/digits/{}1.png", i)
-                ).unwrap())
-            );
+        *y.atref(0, 0) = 1.;
+        *y.atref(0, 1) = 0.;
+        // for i in 0..10 {
+        //     images.push(
+        //         process_image(
+        //             image::open(format!("data/digits/{}0.png", i)
+        //         ).unwrap())
+        //     );
 
-            *y.atref(0, i + 10) = 1.;
-        }
+        //     *y.atref(0, i) = 0.;
+        // }
 
-        let mut data: Shape4 = Shape4::new(images.len(), 1, 28, 28);
+        // for i in 0..10 {
+        //     images.push(
+        //         process_image(
+        //             image::open(format!("data/digits/{}1.png", i)
+        //         ).unwrap())
+        //     );
+
+        //     *y.atref(0, i + 10) = 1.;
+        // }
+
+        // let mut data: Shape4 = Shape4::new(images.len(), 1, 28, 28);
+        let mut data: Shape4 = Shape4::new(images.len(), 1, 8, 8);
         for e in 0..data.shape().0 {
             *data.at_mut(e).at_mut(0) = images[e].clone();
         }
@@ -85,13 +111,13 @@ fn main() {
 
         let mut model: Model = Model::new();
         model.add(Layer::conv(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 1, 1)));
-        model.add(Layer::conv(6, (5, 5), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
-        model.add(Layer::conv(16, (5, 5), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
+        model.add(Layer::conv(6, (3, 3), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
+        model.add(Layer::conv(16, (3, 3), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
         model.add(Layer::dense(400, Activation::Sigmoid));
         model.add(Layer::dense(120, Activation::Sigmoid));
         model.add(Layer::dense(50, Activation::Sigmoid));
         model.add(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 2000, 1.);
+        model.train(&x, &y, 200, 1.);
         model.save("params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
