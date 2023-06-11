@@ -20,7 +20,7 @@ pub struct Conv {
 
     pub(crate) a: Shape4,
     z: Shape4,
-    p: Shape4,
+    pub(crate) p: Shape4,
     row_maxes: Vec<Vec<Vec<Vec<usize>>>>,
     col_maxes: Vec<Vec<Vec<Vec<usize>>>>,
 
@@ -241,15 +241,13 @@ impl Conv {
 impl Prop for Conv {
     fn forward_prop(&mut self, back: &Layer, x: &Input) {
         let m: usize = x.to_conv().shape().0;
-        let bl: &Conv = back.to_conv();
+        let bl: Conv = back.to_conv();
 
         for e in 0..m {
             for n in 0..self.nc {
                 let convolved: Matrix = convolve(&bl.a, &self.w, e, n);
-                let z: Matrix = convolved +
-                                &Matrix::from(
-                                    vec![self.b.clone()]
-                                ).transpose();
+                let z: Matrix = convolved + self.b[n];
+
                 *self.z.at_mut(e).at_mut(n) = z;
             }
         }
@@ -270,21 +268,24 @@ impl Prop for Conv {
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
         Delta::Conv {
-            dw: self.dw(back.to_conv(), front.unwrap(), y.cols()),
+            dw: self.dw(&back.to_conv(), front.unwrap(), y.cols()),
             db: self.db(front.unwrap())
         }
     }
 }
 
 fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
-    let layers: Vec<Matrix> = input.at(e).data().iter()
-        .zip(filter.data().iter())
-        .map(|(a, w)| a.convolve(w.at(n)))
-        .collect();
-    layers.iter()
-        .fold(Matrix::new(layers[0].rows(), layers[0].cols()),
-            |sum, val| sum + val
-        )
+    let mut sum: Matrix = Matrix::new(
+        input.shape().2 - filter.shape().2 + 1,
+        input.shape().3 - filter.shape().3 + 1
+    );
+
+    for c in 0..filter.shape().1 {
+        let convolved = input.at(e).at(c).convolve(filter.at(n).at(c));
+        sum = sum + &convolved;
+    }
+
+    sum
 }
 
 #[cfg(test)]

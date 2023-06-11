@@ -73,6 +73,12 @@ impl Model {
     pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32) {
         self.adjust_layer_dims(x);
 
+//         for (i, l) in self.layers.iter().enumerate() {
+//             if let Layer::Conv(l) = l {
+//                 println!("Layer {} | a = {:?}", i, l.a.shape());
+//             }
+//         }
+
         for i in 0..epochs {
             self.forward_prop(x);
 
@@ -158,7 +164,10 @@ impl Model {
     fn prepare_layer0(&mut self, x: &Input) {
         match &mut self.layers[0] {
             Layer::Dense(d) => d.a = x.to_dense().clone(),
-            Layer::Conv(c) => c.a = x.to_conv().clone()
+            Layer::Conv(c) => {
+                c.a = x.to_conv().clone();
+                c.p = x.to_conv().clone();
+            }
         }
     }
 
@@ -170,7 +179,7 @@ impl Model {
         let mut sum: f32 = 0.;
 
         if let Some(last) = self.layers.last() {
-            let d: &Dense = last.to_dense();
+            let d: Dense = last.to_dense();
             for r in 0..y.rows() {
                 for c in 0..y.cols() {
                     sum += y.at(r, c) * if d.a.at(r, c) == 0. {

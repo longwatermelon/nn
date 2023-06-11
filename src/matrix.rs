@@ -179,6 +179,10 @@ impl Matrix {
         self.data[0].len()
     }
 
+    pub fn dims(&self) -> String {
+        format!("{}x{}", self.rows(), self.cols())
+    }
+
     pub fn data(&self) -> &Vec<Vec<f32>> {
         &self.data
     }
@@ -233,6 +237,22 @@ impl ops::Add<&Matrix> for Matrix {
         for r in 0..self.rows() {
             for c in 0..self.cols() {
                 *res.atref(r, c) = self.at(r, c) + rhs.at(r, c);
+            }
+        }
+
+        res
+    }
+}
+
+impl ops::Add<f32> for Matrix {
+    type Output = Matrix;
+
+    fn add(self, rhs: f32) -> Matrix {
+        let mut res: Matrix = Matrix::new(self.rows(), self.cols());
+
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                *res.atref(r, c) = self.at(r, c) + rhs;
             }
         }
 

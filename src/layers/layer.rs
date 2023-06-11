@@ -71,17 +71,23 @@ impl Layer {
         Layer::Conv(Conv::new(filters, fshape, afn, pooling))
     }
 
-    pub fn to_dense(&self) -> &Dense {
+    pub fn to_dense(&self) -> Dense {
         match self {
-            Layer::Dense(d) => d,
-            Layer::Conv(_c) => todo!()
+            Layer::Dense(d) => d.clone(),
+            Layer::Conv(c) => {
+                let a: Matrix = Input::Conv(c.p.clone()).to_dense();
+                println!("{}", a.dims());
+                let mut res: Dense = Dense::new(a.rows(), Activation::Linear);
+                res.a = a.clone();
+                res
+            }
         }
     }
 
-    pub fn to_conv(&self) -> &Conv {
+    pub fn to_conv(&self) -> Conv {
         match self {
-            Layer::Dense(_d) => todo!(),
-            Layer::Conv(c) => c
+            Layer::Dense(_) => panic!("Dense to conv not supported."),
+            Layer::Conv(c) => c.clone()
         }
     }
 

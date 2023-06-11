@@ -33,7 +33,7 @@ impl Dense {
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let back_n: usize = match bl {
             Layer::Dense(d) => d.n,
-            Layer::Conv(c) => c.a.flatten().len()
+            Layer::Conv(_) => bl.to_dense().a.rows()
         };
 
         self.w = Matrix::new(self.n, back_n);
@@ -58,21 +58,22 @@ impl Dense {
 
 impl Prop for Dense {
     fn forward_prop(&mut self, back: &Layer, x: &Input) {
-        let bl: &Dense = back.to_dense();
+        let bl: Dense = back.to_dense();
 
         self.a = Matrix::new(self.n, x.to_dense().cols());
         let afn = self.afn.getfn();
 
+        println!("{} {}", self.w.dims(), bl.a.dims());
         self.z = self.w.clone() * &bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
         self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
-        let bl: &Dense = back.to_dense();
+        let bl: Dense = back.to_dense();
 
         if let Some(front) = front {
-            let fl: &Dense = front.to_dense();
+            let fl: Dense = front.to_dense();
 
             let afn = self.afn.getfn_derivative();
             let left: Matrix = fl.w.transpose() * &fl.dz;

@@ -77,11 +77,6 @@ fn main() {
             *y.atref(0, i + 10) = 1.;
         }
 
-        // let x: Input = Input::Conv(Shape4::from(
-        //     vec![
-        //         Shape3::from(images)
-        //     ])
-        // );
         let mut data: Shape4 = Shape4::new(images.len(), 1, 28, 28);
         for e in 0..data.shape().0 {
             *data.at_mut(e).at_mut(0) = images[e].clone();
