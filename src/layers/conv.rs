@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)]
+
 use super::layer::*;
 use super::pool::Pooling;
 use crate::matrix::{Matrix, Shape4, Shape};

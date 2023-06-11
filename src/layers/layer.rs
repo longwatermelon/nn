@@ -77,7 +77,7 @@ impl Layer {
             Layer::Conv(c) => {
                 let a: Matrix = Input::Conv(c.p.clone()).to_dense();
                 let mut res: Dense = Dense::new(a.rows(), Activation::Linear);
-                res.a = a.clone();
+                res.a = a;
 
                 res
             }

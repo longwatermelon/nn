@@ -157,10 +157,10 @@ impl Model {
 
     fn prepare_layer0(&mut self, x: &Input) {
         match &mut self.layers[0] {
-            Layer::Dense(d) => d.a = x.to_dense().clone(),
+            Layer::Dense(d) => d.a = x.to_dense(),
             Layer::Conv(c) => {
-                c.a = x.to_conv().clone();
-                c.p = x.to_conv().clone();
+                c.a = x.to_conv();
+                c.p = x.to_conv();
             }
         }
     }
