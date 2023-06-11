@@ -76,7 +76,7 @@ impl Model {
         for i in 0..epochs {
             self.forward_prop(x);
 
-            if (i + 1) % 10 == 0 {
+            if (i + 1) % 100 == 0 {
                 println!("Iteration {} | Cost {}", i + 1, self.cost(y));
             }
 

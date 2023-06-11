@@ -243,11 +243,11 @@ impl Conv {
     pub fn apply_delta(&mut self, delta: &Delta, a: f32) {
         match delta {
             Delta::Conv { dw, db } => {
-                self.w = dw.foreach(
-                    |_, m| m.clone() * a
-                ).foreach(
-                    |(ex, ch), m| self.w.at(ex).at(ch).clone() - m
-                );
+                for n in 0..self.w.shape().0 {
+                    for c in 0..self.w.shape().1 {
+                        *self.w.at_mut(n).at_mut(c) = self.w.at(n).at(c).clone() - &(dw.at(n).at(c).clone() * a);
+                    }
+                }
 
                 self.b.iter_mut().zip(db.iter()).for_each(|(b, db)| *b *= db);
             },
@@ -263,7 +263,8 @@ impl Prop for Conv {
 
         for e in 0..m {
             for n in 0..self.nc {
-                let convolved: Matrix = convolve(&bl.a, &self.w, e, n);
+                let convolved: Matrix = convolve(&bl.p, &self.w, e, n);
+                println!("bl.p = {:?} | self.w = {:?} | convolved = {:?}", bl.p, self.w, convolved);
                 let z: Matrix = convolved + self.b[n];
 
                 *self.z.at_mut(e).at_mut(n) = z;
@@ -385,6 +386,84 @@ mod tests {
                 )
             ]
         ));
+    }
+
+    #[test]
+    fn forward_prop() {
+        let mut l: Layer = Layer::conv(1, (3, 3), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
+        let mut prev_l: Layer = Layer::conv(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
+        let x: Input = Input::Conv(Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.]
+                            ]
+                        ),
+                        Matrix::from(
+                            vec![
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.],
+                                vec![1., 1., 1., 0., 0., 0.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        ));
+
+        if let Layer::Conv(c) = &mut prev_l {
+            c.a = x.to_conv();
+            c.p = x.to_conv();
+        }
+
+        if let Layer::Conv(c) = &mut l {
+            c.adjust_dims(&prev_l, 1);
+            c.w = Shape4::from(vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(vec![
+                            vec![1., 0., -1.],
+                            vec![1., 0., -1.],
+                            vec![1., 0., -1.]
+                        ]),
+                        Matrix::from(vec![
+                            vec![1., 0., -1.],
+                            vec![1., 0., -1.],
+                            vec![1., 0., -1.]
+                        ])
+                    ]
+                )
+            ]);
+
+            c.forward_prop(&prev_l, &x);
+
+            assert_eq!(c.a, Shape4::from(
+                vec![
+                    Shape3::from(
+                        vec![
+                            Matrix::from(
+                                vec![
+                                    vec![0., 6., 6., 0.],
+                                    vec![0., 6., 6., 0.],
+                                    vec![0., 6., 6., 0.],
+                                    vec![0., 6., 6., 0.]
+                                ]
+                            ),
+                        ]
+                    )
+                ]
+            ));
+        }
     }
 }
 

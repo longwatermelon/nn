@@ -111,9 +111,9 @@ fn main() {
 
         let mut model: Model = Model::new();
         model.add(Layer::conv(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 1, 1)));
-        model.add(Layer::conv(6, (3, 3), Activation::Sigmoid, Pooling::new(PoolType::Max, 2, 2)));
+        model.add(Layer::conv(12, (3, 3), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.add(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 200, 1.);
+        model.train(&x, &y, 1000, 1.);
         model.save("params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
