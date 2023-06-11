@@ -340,6 +340,14 @@ impl Shape4 {
         res
     }
 
+    pub fn random_init(&mut self) {
+        for s3 in &mut self.data {
+            for m in s3.data_mut() {
+                m.random_init(-0.5, 0.5);
+            }
+        }
+    }
+
     pub fn shape(&self) -> (usize, usize, usize, usize) {
         (self.data.len(), self.data[0].data().len(),
         self.data[0].data()[0].rows(), self.data[0].data()[0].cols())
