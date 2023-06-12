@@ -1,7 +1,6 @@
 use super::{dense::Dense, conv::Conv, pool::{Pooling, PoolType}};
 use crate::matrix::{Matrix, Shape4};
 use crate::model::Input;
-
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

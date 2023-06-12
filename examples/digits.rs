@@ -72,7 +72,7 @@ fn main() {
         model.add(Layer::dense(25, Activation::Sigmoid));
         model.add(Layer::dense(15, Activation::Sigmoid));
         model.add(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 2000, 1.);
+        model.train(&x, &y, 2000, 1., true);
         model.save("params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);

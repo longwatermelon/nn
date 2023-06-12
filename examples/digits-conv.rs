@@ -113,7 +113,7 @@ fn main() {
         model.add(Layer::input(&x));
         model.add(Layer::conv(12, (3, 3), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.add(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 1000, 1.);
+        model.train(&x, &y, 1000, 1., false);
         model.save("params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);

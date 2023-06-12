@@ -4,7 +4,6 @@ use super::layer::*;
 use super::pool::Pooling;
 use crate::matrix::{Matrix, Shape4, Shape};
 use crate::model::Input;
-
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

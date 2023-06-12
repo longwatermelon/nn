@@ -1,5 +1,4 @@
 use crate::matrix::Matrix;
-
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

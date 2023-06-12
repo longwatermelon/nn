@@ -1,8 +1,6 @@
 use crate::layers::{Layer, Prop, Delta, dense::Dense};
 use crate::matrix::{Matrix, Shape4, Shape};
-
 use serde::{Serialize, Deserialize};
-
 use std::fmt;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -70,20 +68,23 @@ impl Model {
         serde_json::from_str(data.as_str()).unwrap()
     }
 
-    pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32) {
+    pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32, log_progress: bool) {
         self.adjust_layer_dims(x);
 
         for i in 0..epochs {
             self.forward_prop(x);
 
-            if (i + 1) % 100 == 0 {
+            if log_progress && (i + 1) % 100 == 0 {
                 print!("\rIteration {} | Cost {}", i + 1, self.cost(y));
                 std::io::stdout().flush().unwrap();
             }
 
             self.back_prop(y, a);
         }
-        println!();
+
+        if log_progress {
+            println!();
+        }
     }
 
     pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {
@@ -219,10 +220,6 @@ mod tests {
         get_x().to_dense().rows()
     }
 
-    // fn get_m() -> usize {
-    //     get_x().cols()
-    // }
-
     fn get_model() -> Model {
         let mut model: Model = Model::new();
         model.add(Layer::dense(get_nf(), Activation::Linear));
@@ -231,43 +228,10 @@ mod tests {
         model
     }
 
-//     #[test]
-//     fn dims() {
-//         let mut model: Model = get_model();
-//         model.adjust_layer_dims(&get_x());
-
-//         if let Layer::Dense(l_input) = &model.layers[0] {
-//             if let Layer::Dense(l_hidden) = &model.layers[1] {
-//                 if let Layer::Dense(l_output) = &model.layers[2] {
-//                     let nf = get_nf();
-//                     let m = get_m();
-//                     let x = get_x();
-//                     let y = get_y();
-
-//                     assert_eq!(l_input.n, nf);
-//                     assert_eq!(l_input.a.rows(), x.rows());
-//                     assert_eq!(l_input.a.cols(), x.cols());
-
-//                     assert_eq!(l_hidden.w.rows(), 4);
-//                     assert_eq!(l_hidden.w.cols(), nf);
-//                     assert_eq!(l_hidden.a.rows(), 4);
-//                     assert_eq!(l_hidden.a.cols(), m);
-//                     assert_eq!(l_hidden.z.rows(), 4);
-//                     assert_eq!(l_hidden.z.cols(), m);
-//                     assert_eq!(l_hidden.dz.rows(), 4);
-//                     assert_eq!(l_hidden.dz.cols(), m);
-
-//                     assert_eq!(l_output.a.rows(), y.rows());
-//                     assert_eq!(l_output.a.cols(), y.cols());
-//                 }
-//             }
-//         }
-//     }
-
     #[test]
     fn train_and_predict() {
         let mut model: Model = get_model();
-        model.train(&get_x(), &get_y(), 1000, 0.5);
+        model.train(&get_x(), &get_y(), 1000, 0.5, false);
 
         let prediction: f32 = model.predict(
             &Input::Dense(Matrix::from(vec![

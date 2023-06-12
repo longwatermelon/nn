@@ -1,7 +1,6 @@
 use super::layer::*;
 use crate::matrix::Matrix;
 use crate::model::Input;
-
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
