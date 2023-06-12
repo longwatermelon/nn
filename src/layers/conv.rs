@@ -204,20 +204,21 @@ impl Conv {
         };
 
         // dzw[p][q].at(e).at(c).at(u, v)
-        let dzw: Vec<Vec<Shape4>> = vec![
+        let mut dzw: Vec<Vec<Shape4>> = vec![
             vec![
                 Shape4::new(m, bl.nc, self.nh, self.nw); self.fh
             ]; self.fw
         ];
-        for (p, dzw_p) in dzw.iter().enumerate().take(self.fh) {
-            for (q, dzw_pq) in dzw_p.iter().enumerate().take(self.fw) {
-                dzw_pq.foreach(|(e, c), m|
+        for (p, dzw_p) in dzw.iter_mut().enumerate().take(self.fh) {
+            for (q, dzw_pq) in dzw_p.iter_mut().enumerate().take(self.fw) {
+                *dzw_pq = dzw_pq.foreach(|(e, c), m|
                     m.foreach(|u, v|
                         dzw_assign_to.at(e).at(c).at(p + u, q + v)
                     )
                 );
             }
         }
+        // println!("{:#?}", dzw);
 
         let mut dlw: Shape4 = Shape4::new(self.nc, bl.nc, self.fh, self.fw);
         for n in 0..self.nc {
@@ -235,7 +236,9 @@ impl Conv {
                 }
             }
         }
+        // println!("{:#?}", self.dz);
 
+        println!("{:#?}", dlw);
         dlw
     }
 
@@ -284,10 +287,12 @@ impl Prop for Conv {
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
-        Delta::Conv {
-            dw: self.dw(&back.to_conv(), front.unwrap(), y.cols()),
-            db: self.db(front.unwrap())
-        }
+        // db must be calculated before dw, because db sets self.dz
+        let db: Vec<f32> = self.db(front.unwrap());
+        let dw: Shape4 = self.dw(&back.to_conv(), front.unwrap(), y.cols());
+
+        let delta: Delta = Delta::Conv { dw, db };
+        delta
     }
 }
 
