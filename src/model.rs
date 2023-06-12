@@ -77,11 +77,13 @@ impl Model {
             self.forward_prop(x);
 
             if (i + 1) % 100 == 0 {
-                println!("Iteration {} | Cost {}", i + 1, self.cost(y));
+                print!("\rIteration {} | Cost {}", i + 1, self.cost(y));
+                std::io::stdout().flush().unwrap();
             }
 
             self.back_prop(y, a);
         }
+        println!();
     }
 
     pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {

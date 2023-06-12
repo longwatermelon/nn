@@ -264,7 +264,6 @@ impl Prop for Conv {
         for e in 0..m {
             for n in 0..self.nc {
                 let convolved: Matrix = convolve(&bl.p, &self.w, e, n);
-                println!("bl.p = {:?} | self.w = {:?} | convolved = {:?}", bl.p, self.w, convolved);
                 let z: Matrix = convolved + self.b[n];
 
                 *self.z.at_mut(e).at_mut(n) = z;

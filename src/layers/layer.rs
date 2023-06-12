@@ -1,4 +1,4 @@
-use super::{dense::Dense, conv::Conv, pool::Pooling};
+use super::{dense::Dense, conv::Conv, pool::{Pooling, PoolType}};
 use crate::matrix::{Matrix, Shape4};
 use crate::model::Input;
 
@@ -69,6 +69,13 @@ impl Layer {
     pub fn conv(filters: usize, fshape: (usize, usize),
                 afn: Activation, pooling: Pooling) -> Self {
         Layer::Conv(Conv::new(filters, fshape, afn, pooling))
+    }
+
+    pub fn input(x: &Input) -> Self {
+        match x {
+            Input::Dense(a) => Layer::dense(a.rows(), Activation::Linear),
+            Input::Conv(a) => Layer::conv(a.shape().1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 1, 1))
+        }
     }
 
     pub fn to_dense(&self) -> Dense {
