@@ -68,10 +68,10 @@ fn main() {
         let x: Input = Input::Dense(Matrix::from(images).transpose());
 
         let mut model: Model = Model::new();
-        model.add(Layer::input(&x));
-        model.add(Layer::dense(25, Activation::Sigmoid));
-        model.add(Layer::dense(15, Activation::Sigmoid));
-        model.add(Layer::dense(1, Activation::Sigmoid));
+        model.push(Layer::input(&x));
+        model.push(Layer::dense(25, Activation::Sigmoid));
+        model.push(Layer::dense(15, Activation::Sigmoid));
+        model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 5000, 1., true);
         model.save("params");
     } else {

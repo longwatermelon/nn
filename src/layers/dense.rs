@@ -39,6 +39,10 @@ impl Dense {
         self.w.random_init(-0.2, 0.2);
         self.b.resize(self.n, 0.);
 
+        self.adjust_nonparameter_dims(m);
+    }
+
+    pub fn adjust_nonparameter_dims(&mut self, m: usize) {
         self.a = Matrix::new(self.n, m);
         self.z = Matrix::new(self.n, m);
         self.dz = Matrix::new(self.n, m);

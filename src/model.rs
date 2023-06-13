@@ -16,6 +16,7 @@ impl Error {
     }
 }
 
+#[derive(Clone)]
 pub enum Input {
     Dense(Matrix),
     Conv(Shape4)
@@ -69,13 +70,13 @@ impl Model {
     }
 
     pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32, log_progress: bool) {
-        self.adjust_layer_dims(x);
+        self.adjust_layer_dims(x, true);
 
         for i in 0..epochs {
             self.forward_prop(x);
 
             if log_progress && (i + 1) % 100 == 0 {
-                print!("\rIteration {} | Cost {}", i + 1, self.cost(y));
+                print!("\rIteration {} | Cost {:.10}", i + 1, self.cost(y));
                 std::io::stdout().flush().unwrap();
             }
 
@@ -88,8 +89,10 @@ impl Model {
     }
 
     pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {
+        self.adjust_layer_dims(x, false);
         self.forward_prop(x);
         if let Some(last) = self.layers.last() {
+            println!("{:?}", last.to_dense().a);
             Ok(last.to_dense().a.extract_col(0))
         } else {
             Err(Error::new("no layers detected"))
@@ -101,15 +104,15 @@ impl Model {
         file.write_all(serde_json::to_string(self).unwrap().as_bytes()).unwrap();
     }
 
-    fn adjust_layer_dims(&mut self, x: &Input) {
+    fn adjust_layer_dims(&mut self, x: &Input, include_parameters: bool) {
         self.prepare_layer0(x);
 
         for i in 1..self.layers.len() {
-            let [bl, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
+            let [bl, l, ..] = self.layers[(i - 1)..].as_mut() else { unreachable!() };
 
             match l {
-                Layer::Dense(d) => d.adjust_dims(bl, x.to_dense().cols()),
-                Layer::Conv(c) => c.adjust_dims(bl, x.to_conv().shape().0)
+                Layer::Dense(d) => if include_parameters { d.adjust_dims(bl, x.to_dense().cols()) } else { d.adjust_nonparameter_dims(x.to_dense().cols()) },
+                Layer::Conv(c) => if include_parameters { c.adjust_dims(bl, x.to_conv().shape().0) } else { c.adjust_nonparameter_dims(x.to_conv().shape().0) }
             }
         }
     }
@@ -118,7 +121,7 @@ impl Model {
         self.prepare_layer0(x);
 
         for i in 1..self.layers.len() {
-            let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { panic!() };
+            let [back, l, ..] = self.layers[(i - 1)..].as_mut() else { unreachable!() };
 
             match l {
                 Layer::Dense(d) => d.forward_prop(back, x),
@@ -168,7 +171,7 @@ impl Model {
         }
     }
 
-    pub fn add(&mut self, l: Layer) {
+    pub fn push(&mut self, l: Layer) {
         self.layers.push(l);
     }
 
@@ -182,7 +185,7 @@ impl Model {
                     sum += y.at(r, c) * if d.a.at(r, c) == 0. {
                         0.
                     } else {
-                        f32::log10(d.a.at(r, c))
+                        f32::ln(d.a.at(r, c))
                     };
                 }
             }

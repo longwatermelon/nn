@@ -60,8 +60,12 @@ impl Conv {
 
         self.w = Shape4::new(self.nc, back_nc, self.fh, self.fw);
         self.w.random_init();
-        self.b.resize(self.nc, 0.);
+        self.b = vec![0.; self.nc];
 
+        self.adjust_nonparameter_dims(m);
+    }
+
+    pub fn adjust_nonparameter_dims(&mut self, m: usize) {
         self.a = Shape4::new(m, self.nc, self.nh, self.nw);
         self.z = self.a.clone();
         self.dz = self.z.clone();
@@ -227,7 +231,6 @@ impl Conv {
                 }
             }
         }
-        // println!("{:#?}", dzw);
 
         let mut dlw: Shape4 = Shape4::new(self.nc, bl.nc, self.fh, self.fw);
         for n in 0..self.nc {
@@ -245,9 +248,7 @@ impl Conv {
                 }
             }
         }
-        // println!("{:#?}", self.dz);
 
-        // println!("{:#?}", dlw);
         dlw
     }
 
@@ -282,13 +283,10 @@ impl Prop for Conv {
         }
 
         let afn = self.afn.getfn();
-        for (block, zblock) in self.a.data_mut()
-                                     .iter_mut()
-                                     .zip(self.z.data().iter()) {
-            for (channel, zchannel) in block.data_mut()
-                                            .iter_mut()
-                                            .zip(zblock.data().iter()) {
-                *channel = channel.foreach(|r, c| afn(zchannel.at(r, c)));
+        for e in 0..m {
+            for n in 0..self.nc {
+                *self.a.at_mut(e).at_mut(n) =
+                    self.z.at(e).at(n).foreach(|r, c| afn(self.z.at(e).at(n).at(r, c)));
             }
         }
 
@@ -300,8 +298,7 @@ impl Prop for Conv {
         let db: Vec<f32> = self.db(front.unwrap());
         let dw: Shape4 = self.dw(&back.to_conv(), front.unwrap(), y.cols());
 
-        let delta: Delta = Delta::Conv { dw, db };
-        delta
+        Delta::Conv { dw, db }
     }
 }
 

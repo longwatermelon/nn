@@ -24,18 +24,18 @@ fn main() {
     if args.is_empty() {
         let mut model: Model = Model::from("params");
         let example0: Matrix = process_image(
-            image::open("data/digits/test0.png").unwrap()
+            image::open("data/digits/00.png").unwrap()
         );
 
         let example1: Matrix = process_image(
-            image::open("data/digits/test1.png").unwrap()
+            image::open("data/digits/21.png").unwrap()
         );
 
         let pred0: f32 = model.predict(
             &Input::Conv(
                 Shape4::from(
                     vec![
-                        Shape3::from(vec![example0; 1]); 1
+                        Shape3::from(vec![example0])
                     ]
                 )
             )
@@ -45,7 +45,7 @@ fn main() {
             &Input::Conv(
                 Shape4::from(
                     vec![
-                        Shape3::from(vec![example1; 1]); 1
+                        Shape3::from(vec![example1])
                     ]
                 )
             )
@@ -84,11 +84,19 @@ fn main() {
         let x: Input = Input::Conv(data);
 
         let mut model: Model = Model::new();
-        model.add(Layer::input(&x));
-        model.add(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
-        model.add(Layer::dense(1, Activation::Sigmoid));
+        model.push(Layer::input(&x));
+        model.push(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
+        model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 1000, 0.01, true);
         model.save("params");
+
+        // println!("Reconstructed:");
+        // let mut x_cloned: Shape4 = x.to_conv().clone();
+        // x_cloned.data_mut().remove(0);
+        // // x_cloned.data_mut().pop();
+        // println!("{}", x_cloned.data().len());
+        // // let x_cloned: Shape4 = Shape4::from(vec![Shape3::from(vec![images[11].clone()])]);
+        // model.predict(&Input::Conv(x_cloned)).unwrap();
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
         std::process::exit(1);
