@@ -113,14 +113,17 @@ impl Conv {
                     }
                 }
 
-                let g_function = self.afn.getfn();
-                self.dz = dla.clone().zero()
-                    .foreach(|(e, n), m| {
-                        m.foreach(|u, v| {
-                            dla.at(e).at(n).at(u, v) *
-                            g_function(self.z.at(e).at(n).at(u, v))
-                        })
-                    });
+                let gprime = self.afn.getfn_derivative();
+                for e in 0..self.dz.shape().0 {
+                    for n in 0..self.dz.shape().1 {
+                        for u in 0..self.dz.shape().2 {
+                            for v in 0..self.dz.shape().3 {
+                                *self.dz.at_mut(e).at_mut(n).atref(u, v) =
+                                    dla.at(e).at(n).at(u, v) * gprime(self.z.at(e).at(n).at(u, v));
+                            }
+                        }
+                    }
+                }
 
                 // Len n_c^l
                 let mut dlb: Vec<f32> = vec![0.; self.dz.shape().1];
@@ -199,19 +202,19 @@ impl Conv {
 
     fn dw(&self, bl: &Conv, front: &Layer, m: usize) -> Shape4 {
         let dzw_assign_to: &Shape4 = match front {
-            Layer::Dense(_) => &bl.a,
-            Layer::Conv(_) => &bl.p
+            Layer::Dense(_) => &bl.p,
+            Layer::Conv(_) => &bl.a
         };
 
         // dzw[p][q].at(e).at(c).at(u, v)
         let mut dzw: Vec<Vec<Shape4>> = vec![
             vec![
-                Shape4::new(m, bl.nc, self.nh, self.nw); self.fh
-            ]; self.fw
+                Shape4::new(m, bl.nc, self.nh, self.nw); self.fw
+            ]; self.fh
         ];
-        for (p, dzw_p) in dzw.iter_mut().enumerate().take(self.fh) {
-            for (q, dzw_pq) in dzw_p.iter_mut().enumerate().take(self.fw) {
-                *dzw_pq = dzw_pq.foreach(|(e, c), m|
+        for p in 0..dzw.len() {
+            for q in 0..dzw[0].len() {
+                dzw[p][q] = dzw[p][q].foreach(|(e, c), m|
                     m.foreach(|u, v|
                         dzw_assign_to.at(e).at(c).at(p + u, q + v)
                     )
@@ -238,7 +241,7 @@ impl Conv {
         }
         // println!("{:#?}", self.dz);
 
-        println!("{:#?}", dlw);
+        // println!("{:#?}", dlw);
         dlw
     }
 
@@ -251,7 +254,7 @@ impl Conv {
                     }
                 }
 
-                self.b.iter_mut().zip(db.iter()).for_each(|(b, db)| *b *= db);
+                self.b.iter_mut().zip(db.iter()).for_each(|(b, db)| *b -= db * a);
             },
             _ => panic!("Delta type mismatch: Conv layer | {:?} delta", delta)
         }
@@ -467,6 +470,63 @@ mod tests {
                 ]
             ));
         }
+    }
+
+    #[test]
+    fn delta() {
+        let mut layer: Conv = Conv::new(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
+        layer.w = Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![0., 0.],
+                                vec![0., 0.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        );
+
+        layer.b = vec![0.; 10];
+
+        let dw: Shape4 = Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![2., 2.],
+                                vec![2., 2.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        );
+
+        let db: Vec<f32> = vec![1.; 10];
+
+        let delta: Delta = Delta::Conv { dw: dw.clone(), db: db.clone() };
+        layer.apply_delta(&delta, 1.);
+
+        assert_eq!(layer.w, Shape4::from(
+            vec![
+                Shape3::from(
+                    vec![
+                        Matrix::from(
+                            vec![
+                                vec![-2., -2.],
+                                vec![-2., -2.]
+                            ]
+                        )
+                    ]
+                )
+            ]
+        ));
+        assert_eq!(layer.b, vec![-1.; 10]);
     }
 }
 

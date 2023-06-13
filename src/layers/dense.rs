@@ -48,7 +48,7 @@ impl Dense {
         match delta {
             Delta::Dense { dw, db } => {
                 self.w = self.w.clone() - &(dw.clone() * a);
-                self.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b *= db);
+                self.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
             },
             _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta)
         }
@@ -83,9 +83,9 @@ impl Prop for Dense {
         }
 
         let dw: Matrix = self.dz.clone() * &bl.a.transpose() * (1. / y.cols() as f32);
-        let mut db: Vec<f32> = Vec::with_capacity(self.dz.rows());
-        for r in self.dz.data() {
-            db.push(r.iter().sum());
+        let mut db: Vec<f32> = Vec::with_capacity(self.dz.cols());
+        for i in 0..self.dz.cols() {
+            db.push(self.dz.extract_col(i).iter().sum::<f32>() / y.cols() as f32);
         }
 
         Delta::Dense {

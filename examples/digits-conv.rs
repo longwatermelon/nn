@@ -23,29 +23,51 @@ fn main() {
 
     if args.is_empty() {
         let mut model: Model = Model::from("params");
-        let example0: Matrix = process_image(
-            image::open("data/digits/test0.png").unwrap()
-        );
+        // let example0: Matrix = process_image(
+        //     image::open("data/digits/test0.png").unwrap()
+        // );
 
-        let example1: Matrix = process_image(
-            image::open("data/digits/test1.png").unwrap()
-        );
+        // let example1: Matrix = process_image(
+        //     image::open("data/digits/test1.png").unwrap()
+        // );
 
-        let pred0: f32 = model.predict(
-            &Input::Conv(
-                Shape4::from(
-                    vec![
-                        Shape3::from(vec![example0; 1]); 1
-                    ]
-                )
-            )
-        ).unwrap()[0];
+        let example1: Matrix = Matrix::from(vec![
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.],
+            vec![1., 1., 1., 1., 1., 1., 1., 1.]
+        ]);
+
+        let example0: Matrix = Matrix::from(vec![
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.],
+            vec![0., 0., 0., 0., 0., 0., 0., 0.]
+        ]);
 
         let pred1: f32 = model.predict(
             &Input::Conv(
                 Shape4::from(
                     vec![
                         Shape3::from(vec![example1; 1]); 1
+                    ]
+                )
+            )
+        ).unwrap()[0];
+
+        let pred0: f32 = model.predict(
+            &Input::Conv(
+                Shape4::from(
+                    vec![
+                        Shape3::from(vec![example0; 1]); 1
                     ]
                 )
             )
@@ -111,9 +133,9 @@ fn main() {
 
         let mut model: Model = Model::new();
         model.add(Layer::input(&x));
-        model.add(Layer::conv(12, (3, 3), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
+        model.add(Layer::conv(4, (3, 3), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.add(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 1, 1., false);
+        model.train(&x, &y, 1000, 1., true);
         model.save("params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
