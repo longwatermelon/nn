@@ -2,21 +2,21 @@ use nn::model::{Model, Input};
 use nn::layers::{Layer, Activation, pool::{Pooling, PoolType}};
 use nn::matrix::{Matrix, Shape3, Shape4, Shape};
 
-use image::{DynamicImage, GenericImageView};
+// use image::{DynamicImage, GenericImageView};
 
-fn process_image(image: DynamicImage) -> Matrix {
-    let (w, h) = image.dimensions();
-    let mut res: Matrix = Matrix::new(h as usize, w as usize);
+// fn process_image(image: DynamicImage) -> Matrix {
+//     let (w, h) = image.dimensions();
+//     let mut res: Matrix = Matrix::new(h as usize, w as usize);
 
-    for y in 0..h {
-        for x in 0..w {
-            let pixel = image.get_pixel(x, y);
-            *res.atref(y as usize, x as usize) = pixel[0] as f32 / 255.;
-        }
-    }
+//     for y in 0..h {
+//         for x in 0..w {
+//             let pixel = image.get_pixel(x, y);
+//             *res.atref(y as usize, x as usize) = pixel[0] as f32 / 255.;
+//         }
+//     }
 
-    res
-}
+//     res
+// }
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -53,21 +53,21 @@ fn main() {
             vec![0., 0., 0., 0., 0., 0., 0., 0.]
         ]);
 
-        let pred1: f32 = model.predict(
-            &Input::Conv(
-                Shape4::from(
-                    vec![
-                        Shape3::from(vec![example1; 1]); 1
-                    ]
-                )
-            )
-        ).unwrap()[0];
-
         let pred0: f32 = model.predict(
             &Input::Conv(
                 Shape4::from(
                     vec![
                         Shape3::from(vec![example0; 1]); 1
+                    ]
+                )
+            )
+        ).unwrap()[0];
+
+        let pred1: f32 = model.predict(
+            &Input::Conv(
+                Shape4::from(
+                    vec![
+                        Shape3::from(vec![example1; 1]); 1
                     ]
                 )
             )

@@ -127,12 +127,13 @@ impl Conv {
 
                 // Len n_c^l
                 let mut dlb: Vec<f32> = vec![0.; self.dz.shape().1];
-                for e in 0..self.dz.shape().0 {
-                    for u in 0..self.dz.shape().2 {
-                        for v in 0..self.dz.shape().3 {
-                            dlb.iter_mut()
-                                .zip(self.dz.at(e).data().iter())
-                                .for_each(|(b, z)| *b += z.at(u, v));
+                for n in 0..dlb.len() {
+                    // dlb_n
+                    for e in 0..self.dz.shape().0 {
+                        for u in 0..self.nh {
+                            for v in 0..self.nw {
+                                dlb[n] += self.dz.at(e).at(n).at(u, v);
+                            }
                         }
                     }
                 }
@@ -214,11 +215,16 @@ impl Conv {
         ];
         for p in 0..dzw.len() {
             for q in 0..dzw[0].len() {
-                dzw[p][q] = dzw[p][q].foreach(|(e, c), m|
-                    m.foreach(|u, v|
-                        dzw_assign_to.at(e).at(c).at(p + u, q + v)
-                    )
-                );
+                for e in 0..m {
+                    for c in 0..bl.nc {
+                        for u in 0..self.nh {
+                            for v in 0..self.nw {
+                                *dzw[p][q].at_mut(e).at_mut(c).atref(u, v) =
+                                    dzw_assign_to.at(e).at(c).at(p + u, q + v);
+                            }
+                        }
+                    }
+                }
             }
         }
         // println!("{:#?}", dzw);
