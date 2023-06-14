@@ -39,7 +39,6 @@ impl Input {
             Input::Dense(a) => a.clone(),
             Input::Conv(a) => {
                 let f: Vec<f32> = a.flatten();
-                // Matrix::from_1d(f.as_slice(), f.len() / a.shape().0, a.shape().0)
                 let mut m: Matrix = Matrix::new(f.len() / a.shape().0, a.shape().0);
                 let mut index: usize = 0;
                 for c in 0..m.cols() {
@@ -102,7 +101,6 @@ impl Model {
         self.adjust_layer_dims(x, false);
         self.forward_prop(x);
         if let Some(last) = self.layers.last() {
-            println!("{:?}", last.to_dense().a);
             Ok(last.to_dense().a.extract_col(0))
         } else {
             Err(Error::new("no layers detected"))

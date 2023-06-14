@@ -22,7 +22,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     if args.is_empty() {
-        let mut model: Model = Model::from("params");
+        let mut model: Model = Model::from("model/params");
         let example0: Vec<f32> = process_image(
             image::open("data/digits/test0.png").unwrap()
         );
@@ -73,7 +73,7 @@ fn main() {
         model.push(Layer::dense(15, Activation::Sigmoid));
         model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 5000, 1., true);
-        model.save("params");
+        model.save("model/params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
         std::process::exit(1);

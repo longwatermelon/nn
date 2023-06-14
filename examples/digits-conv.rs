@@ -22,7 +22,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     if args.is_empty() {
-        let mut model: Model = Model::from("params");
+        let mut model: Model = Model::from("model/params");
         let example0: Matrix = process_image(
             image::open("data/digits/test0.png").unwrap()
         );
@@ -86,10 +86,10 @@ fn main() {
         let mut model: Model = Model::new();
         model.push(Layer::input(&x));
         model.push(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
-        model.push(Layer::dense(15, Activation::Sigmoid));
+        model.push(Layer::conv(16, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 4000, 0.03, true);
-        model.save("params");
+        model.save("model/params");
 
         // let mut x_copy: Shape4 = x.to_conv().clone();
         // x_copy.data_mut().remove(0);
