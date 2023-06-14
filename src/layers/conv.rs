@@ -52,7 +52,7 @@ impl Conv {
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let (back_nc, back_nh, back_nw) = match bl {
             Layer::Dense(_) => panic!("Dense -> Conv is unsupported."),
-            Layer::Conv(c) => (c.nc, c.a.shape().2, c.a.shape().3)
+            Layer::Conv(c) => (c.nc, c.p.shape().2, c.p.shape().3)
         };
 
         self.nh = back_nh - self.fh + 1;

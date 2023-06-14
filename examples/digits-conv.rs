@@ -88,7 +88,7 @@ fn main() {
         model.push(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.push(Layer::conv(16, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
         model.push(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 4000, 0.03, true);
+        model.train(&x, &y, 500, 0.03, true);
         model.save("model/params");
 
         // let mut x_copy: Shape4 = x.to_conv().clone();
