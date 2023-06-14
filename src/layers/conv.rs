@@ -87,9 +87,9 @@ impl Conv {
         for e in 0..self.p.shape().0 {
             for n in 0..self.p.shape().1 {
                 let (p, rm, cm) = self.pooling.pool(self.a.at(e).at(n));
-                *self.p.at_mut(e).at_mut(n) = p.clone();
-                self.row_maxes[e][n] = rm.clone();
-                self.col_maxes[e][n] = cm.clone();
+                *self.p.at_mut(e).at_mut(n) = p;
+                self.row_maxes[e][n] = rm;
+                self.col_maxes[e][n] = cm;
             }
         }
     }
@@ -276,7 +276,7 @@ impl Prop for Conv {
         for e in 0..m {
             for n in 0..self.nc {
                 let convolved: Matrix = convolve(&bl.p, &self.w, e, n);
-                let z: Matrix = convolved + self.b[n];
+                let z: Matrix = convolved.clone() + self.b[n];
 
                 *self.z.at_mut(e).at_mut(n) = z;
             }
@@ -414,15 +414,19 @@ mod tests {
                                 vec![1., 1., 1., 0., 0., 0.],
                                 vec![1., 1., 1., 0., 0., 0.]
                             ]
-                        ),
+                        )
+                    ]
+                ),
+                Shape3::from(
+                    vec![
                         Matrix::from(
                             vec![
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.]
+                                vec![0., 0., 0., 1., 1., 1.],
+                                vec![0., 0., 0., 1., 1., 1.],
+                                vec![0., 0., 0., 1., 1., 1.],
+                                vec![0., 0., 0., 1., 1., 1.],
+                                vec![0., 0., 0., 1., 1., 1.],
+                                vec![0., 0., 0., 1., 1., 1.]
                             ]
                         )
                     ]
@@ -436,7 +440,8 @@ mod tests {
         }
 
         if let Layer::Conv(c) = &mut l {
-            c.adjust_dims(&prev_l, 1);
+            c.adjust_dims(&prev_l, 2);
+            c.b.iter_mut().for_each(|b| *b = 1.);
             c.w = Shape4::from(vec![
                 Shape3::from(
                     vec![
@@ -444,12 +449,12 @@ mod tests {
                             vec![1., 0., -1.],
                             vec![1., 0., -1.],
                             vec![1., 0., -1.]
-                        ]),
-                        Matrix::from(vec![
-                            vec![1., 0., -1.],
-                            vec![1., 0., -1.],
-                            vec![1., 0., -1.]
                         ])
+                        // Matrix::from(vec![
+                        //     vec![1., 0., -1.],
+                        //     vec![1., 0., -1.],
+                        //     vec![1., 0., -1.]
+                        // ])
                     ]
                 )
             ]);
@@ -462,10 +467,22 @@ mod tests {
                         vec![
                             Matrix::from(
                                 vec![
-                                    vec![0., 6., 6., 0.],
-                                    vec![0., 6., 6., 0.],
-                                    vec![0., 6., 6., 0.],
-                                    vec![0., 6., 6., 0.]
+                                    vec![1., 4., 4., 1.],
+                                    vec![1., 4., 4., 1.],
+                                    vec![1., 4., 4., 1.],
+                                    vec![1., 4., 4., 1.]
+                                ]
+                            ),
+                        ]
+                    ),
+                    Shape3::from(
+                        vec![
+                            Matrix::from(
+                                vec![
+                                    vec![1., -2., -2., 1.],
+                                    vec![1., -2., -2., 1.],
+                                    vec![1., -2., -2., 1.],
+                                    vec![1., -2., -2., 1.]
                                 ]
                             ),
                         ]

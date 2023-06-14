@@ -178,6 +178,12 @@ impl Matrix {
         self.data[0].len()
     }
 
+    pub fn print(&self) {
+        for r in 0..self.rows() {
+            println!("{:.3?}", self.extract_row(r));
+        }
+    }
+
     pub fn dims(&self) -> String {
         format!("{}x{}", self.rows(), self.cols())
     }

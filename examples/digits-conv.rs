@@ -24,11 +24,11 @@ fn main() {
     if args.is_empty() {
         let mut model: Model = Model::from("params");
         let example0: Matrix = process_image(
-            image::open("data/digits/00.png").unwrap()
+            image::open("data/digits/test0.png").unwrap()
         );
 
         let example1: Matrix = process_image(
-            image::open("data/digits/21.png").unwrap()
+            image::open("data/digits/test1.png").unwrap()
         );
 
         let pred0: f32 = model.predict(
@@ -86,17 +86,14 @@ fn main() {
         let mut model: Model = Model::new();
         model.push(Layer::input(&x));
         model.push(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
+        model.push(Layer::dense(15, Activation::Sigmoid));
         model.push(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 1000, 0.01, true);
+        model.train(&x, &y, 4000, 0.03, true);
         model.save("params");
 
-        // println!("Reconstructed:");
-        // let mut x_cloned: Shape4 = x.to_conv().clone();
-        // x_cloned.data_mut().remove(0);
-        // // x_cloned.data_mut().pop();
-        // println!("{}", x_cloned.data().len());
-        // // let x_cloned: Shape4 = Shape4::from(vec![Shape3::from(vec![images[11].clone()])]);
-        // model.predict(&Input::Conv(x_cloned)).unwrap();
+        // let mut x_copy: Shape4 = x.to_conv().clone();
+        // x_copy.data_mut().remove(0);
+        model.predict(&x).unwrap();
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
         std::process::exit(1);

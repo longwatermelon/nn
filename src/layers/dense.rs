@@ -63,6 +63,12 @@ impl Prop for Dense {
     fn forward_prop(&mut self, back: &Layer, x: &Input) {
         let bl: Dense = back.to_dense();
 
+//         for i in 0..864 {
+//             if bl.a.at(i, 0) != bl.a.at(i, 1) {
+//                 println!("Not equal");
+//             }
+//         }
+
         self.a = Matrix::new(self.n, x.to_dense().cols());
         let afn = self.afn.getfn();
 

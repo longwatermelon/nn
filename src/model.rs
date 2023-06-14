@@ -39,7 +39,17 @@ impl Input {
             Input::Dense(a) => a.clone(),
             Input::Conv(a) => {
                 let f: Vec<f32> = a.flatten();
-                Matrix::from_1d(f.as_slice(), f.len() / a.shape().0, a.shape().0)
+                // Matrix::from_1d(f.as_slice(), f.len() / a.shape().0, a.shape().0)
+                let mut m: Matrix = Matrix::new(f.len() / a.shape().0, a.shape().0);
+                let mut index: usize = 0;
+                for c in 0..m.cols() {
+                    for r in 0..m.rows() {
+                        *m.atref(r, c) = f[index];
+                        index += 1;
+                    }
+                }
+
+                m
             }
         }
     }
@@ -225,9 +235,9 @@ mod tests {
 
     fn get_model() -> Model {
         let mut model: Model = Model::new();
-        model.add(Layer::dense(get_nf(), Activation::Linear));
-        model.add(Layer::dense(4, Activation::Sigmoid));
-        model.add(Layer::dense(1, Activation::Sigmoid));
+        model.push(Layer::dense(get_nf(), Activation::Linear));
+        model.push(Layer::dense(4, Activation::Sigmoid));
+        model.push(Layer::dense(1, Activation::Sigmoid));
         model
     }
 
