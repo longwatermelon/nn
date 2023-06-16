@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Arch Linux) (preloaded format=pdflatex 2023.6.7)  16 JUN 2023 15:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Arch Linux) (preloaded format=pdflatex 2023.6.7)  16 JUN 2023 15:23
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -690,69 +690,69 @@ l.145 \end{align*}
 I treat `x^1^2' essentially like `x^1{}^2'.
 
 [3]
-<images/cnn-filter-volume.png, id=237, 999.735pt x 368.37625pt>
+<images/cnn-filter-volume.png, id=232, 999.735pt x 368.37625pt>
 File: images/cnn-filter-volume.png Graphic file (type png)
 <use images/cnn-filter-volume.png>
-Package pdftex.def Info: images/cnn-filter-volume.png  used on input line 286.
+Package pdftex.def Info: images/cnn-filter-volume.png  used on input line 320.
 (pdftex.def)             Requested size: 499.86627pt x 184.18767pt.
- [4 <./images/cnn-filter-volume.png>]
-<images/max-pooling.png, id=244, 1006.76125pt x 368.37625pt>
+ [4]
+<images/max-pooling.png, id=243, 1006.76125pt x 368.37625pt>
 File: images/max-pooling.png Graphic file (type png)
 <use images/max-pooling.png>
-Package pdftex.def Info: images/max-pooling.png  used on input line 368.
+Package pdftex.def Info: images/max-pooling.png  used on input line 402.
 (pdftex.def)             Requested size: 503.3794pt x 184.18767pt.
- [5 <./images/max-pooling.png>]
+ [5 <./images/cnn-filter-volume.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 482.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\begingroup' on input line 482.
+(hyperref)                removing `math shift' on input line 481.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\endgroup' on input line 482.
+(hyperref)                removing `\begingroup' on input line 481.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@@over' on input line 482.
+(hyperref)                removing `\endgroup' on input line 481.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 482.
-
-[6]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 491.
+(hyperref)                removing `\@@over' on input line 481.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\begingroup' on input line 491.
+(hyperref)                removing `math shift' on input line 481.
+
+[6 <./images/max-pooling.png>]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 490.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\endgroup' on input line 491.
+(hyperref)                removing `\begingroup' on input line 490.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@@over' on input line 491.
+(hyperref)                removing `\endgroup' on input line 490.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 491.
+(hyperref)                removing `\@@over' on input line 490.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 491.
+(hyperref)                removing `superscript' on input line 490.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 491.
+(hyperref)                removing `subscript' on input line 490.
 
-./nn.tex:495: Undefined control sequence.
-l.495 ...^l_{enu_{max}v_{max}}$, where $x = \floor
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 490.
+
+./nn.tex:494: Undefined control sequence.
+l.494 ...^l_{enu_{max}v_{max}}$, where $x = \floor
                                                   (v_{max}/p_{W})$, $y = \fl...
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -760,8 +760,8 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-./nn.tex:495: Undefined control sequence.
-l.495 ... $x = \floor(v_{max}/p_{W})$, $y = \floor
+./nn.tex:494: Undefined control sequence.
+l.494 ... $x = \floor(v_{max}/p_{W})$, $y = \floor
                                                   (u_{max}/p_H)$
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -772,163 +772,169 @@ and I'll forget about whatever was undefined.
 [7]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 596.
+(hyperref)                removing `math shift' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\begingroup' on input line 596.
+(hyperref)                removing `\begingroup' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 596.
+(hyperref)                removing `superscript' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 596.
+(hyperref)                removing `subscript' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\endgroup' on input line 596.
+(hyperref)                removing `\endgroup' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@@over' on input line 596.
+(hyperref)                removing `\@@over' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 596.
+(hyperref)                removing `superscript' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 596.
+(hyperref)                removing `subscript' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 596.
+(hyperref)                removing `math shift' on input line 595.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 603.
+(hyperref)                removing `math shift' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\begingroup' on input line 603.
+(hyperref)                removing `\begingroup' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 603.
+(hyperref)                removing `superscript' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 603.
+(hyperref)                removing `subscript' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\endgroup' on input line 603.
+(hyperref)                removing `\endgroup' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@@over' on input line 603.
+(hyperref)                removing `\@@over' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 603.
+(hyperref)                removing `superscript' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 603.
+(hyperref)                removing `subscript' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 603.
+(hyperref)                removing `math shift' on input line 602.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 608.
+(hyperref)                removing `math shift' on input line 607.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\begingroup' on input line 608.
+(hyperref)                removing `\begingroup' on input line 607.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\endgroup' on input line 608.
+(hyperref)                removing `\endgroup' on input line 607.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@@over' on input line 608.
+(hyperref)                removing `\@@over' on input line 607.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 608.
+(hyperref)                removing `math shift' on input line 607.
 
 [8]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 630.
+(hyperref)                removing `math shift' on input line 629.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\rightarrow' on input line 630.
+(hyperref)                removing `\rightarrow' on input line 629.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 630.
+(hyperref)                removing `math shift' on input line 629.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 660.
+(hyperref)                removing `math shift' on input line 659.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\rightarrow' on input line 660.
+(hyperref)                removing `\rightarrow' on input line 659.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 660.
+(hyperref)                removing `math shift' on input line 659.
 
 [9]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 691.
+(hyperref)                removing `math shift' on input line 690.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\rightarrow' on input line 691.
+(hyperref)                removing `\rightarrow' on input line 690.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 691.
+(hyperref)                removing `math shift' on input line 690.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 712.
+(hyperref)                removing `math shift' on input line 711.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\rightarrow' on input line 712.
+(hyperref)                removing `\rightarrow' on input line 711.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 712.
+(hyperref)                removing `math shift' on input line 711.
 
 [10] (build/aux/nn.aux)
-Package rerunfilecheck Info: File `nn.out' has not changed.
-(rerunfilecheck)             Checksum: 97951F88B375B8E0487ACCA8B120BDAC;5012.
+
+Package rerunfilecheck Warning: File `nn.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `nn.out':
+(rerunfilecheck)             Before: F18E625E870692004B1621FA4EA49223;4979
+(rerunfilecheck)             After:  D42645123D57242720B0A9A282FF4AFA;4979.
  ) 
 Here is how much of TeX's memory you used:
- 41758 strings out of 476025
- 1017194 string characters out of 5796533
- 1877388 words of memory out of 5000000
- 61683 multiletter control sequences out of 15000+600000
+ 41756 strings out of 476025
+ 1017072 string characters out of 5796533
+ 1882388 words of memory out of 5000000
+ 61682 multiletter control sequences out of 15000+600000
  527565 words of font info for 88 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 99i,19n,103p,430b,894s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,19n,103p,430b,1018s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb>
-Output written on build/aux/nn.pdf (10 pages, 388378 bytes).
+Output written on build/aux/nn.pdf (10 pages, 388111 bytes).
 PDF statistics:
- 355 PDF objects out of 1000 (max. 8388607)
- 307 compressed objects within 4 object streams
- 51 named destinations out of 1000 (max. 500000)
- 295 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 349 PDF objects out of 1000 (max. 8388607)
+ 301 compressed objects within 4 object streams
+ 50 named destinations out of 1000 (max. 500000)
+ 287 words of extra memory for PDF output out of 10000 (max. 10000000)
 

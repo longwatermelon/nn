@@ -7,28 +7,27 @@
 \contentsline {subsubsection}{\numberline {1.3.2}Back propagation}{2}{subsubsection.1.3.2}%
 \contentsline {subsubsection}{\numberline {1.3.3}Back propagation derivation}{3}{subsubsection.1.3.3}%
 \contentsline {subsection}{\numberline {1.4}Convolutional neural network}{3}{subsection.1.4}%
-\contentsline {subsubsection}{\numberline {1.4.1}Edge detection}{3}{subsubsection.1.4.1}%
-\contentsline {subsubsection}{\numberline {1.4.2}Padding}{4}{subsubsection.1.4.2}%
-\contentsline {subsubsection}{\numberline {1.4.3}Strided convolution}{4}{subsubsection.1.4.3}%
-\contentsline {subsubsection}{\numberline {1.4.4}Convolution over a volume}{4}{subsubsection.1.4.4}%
-\contentsline {subsubsection}{\numberline {1.4.5}One layer of a cnn}{4}{subsubsection.1.4.5}%
-\contentsline {subsubsection}{\numberline {1.4.6}Cnn notation}{5}{subsubsection.1.4.6}%
-\contentsline {subsubsection}{\numberline {1.4.7}Example cnn (not vectorized)}{5}{subsubsection.1.4.7}%
-\contentsline {subsubsection}{\numberline {1.4.8}Pooling layers}{5}{subsubsection.1.4.8}%
-\contentsline {subsubsection}{\numberline {1.4.9}Fully connected layer}{6}{subsubsection.1.4.9}%
-\contentsline {subsubsection}{\numberline {1.4.10}Forward prop}{6}{subsubsection.1.4.10}%
-\contentsline {subsubsection}{\numberline {1.4.11}Why convolutions}{6}{subsubsection.1.4.11}%
-\contentsline {subsection}{\numberline {1.5}Improving model}{6}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}Fixing high bias/variance}{6}{subsubsection.1.5.1}%
-\contentsline {subsubsection}{\numberline {1.5.2}Adding data}{6}{subsubsection.1.5.2}%
-\contentsline {section}{\numberline {2}Cnn back prop}{6}{section.2}%
-\contentsline {subsection}{\numberline {2.1}$\frac {dL}{db}$}{7}{subsection.2.1}%
-\contentsline {subsubsection}{\numberline {2.1.1}$\frac {dL}{dA^l_{enuv}}$}{7}{subsubsection.2.1.1}%
-\contentsline {subsubsection}{\numberline {2.1.2}$\frac {dA^l_{enuv}}{dZ^l_{enuv}}$}{8}{subsubsection.2.1.2}%
-\contentsline {subsubsection}{\numberline {2.1.3}$\frac {dZ^l_{enuv}}{db^l_n}$}{8}{subsubsection.2.1.3}%
-\contentsline {subsection}{\numberline {2.2}$\frac {dL}{dW}$}{9}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Summary}{9}{subsection.2.3}%
-\contentsline {subsubsection}{\numberline {2.3.1}db: conv 1 $\rightarrow $ conv 2}{9}{subsubsection.2.3.1}%
-\contentsline {subsubsection}{\numberline {2.3.2}db: conv 2 $\rightarrow $ dense}{9}{subsubsection.2.3.2}%
-\contentsline {subsubsection}{\numberline {2.3.3}dw: conv 1 $\rightarrow $ conv 2}{10}{subsubsection.2.3.3}%
-\contentsline {subsubsection}{\numberline {2.3.4}dw: conv 2 $\rightarrow $ dense}{10}{subsubsection.2.3.4}%
+\contentsline {subsection}{\numberline {1.5}Improving model}{3}{subsection.1.5}%
+\contentsline {subsubsection}{\numberline {1.5.1}Fixing high bias/variance}{3}{subsubsection.1.5.1}%
+\contentsline {subsubsection}{\numberline {1.5.2}Adding data}{4}{subsubsection.1.5.2}%
+\contentsline {section}{\numberline {2}Convolutional neural network}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Edge detection}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Padding}{4}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Strided convolution}{4}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}One layer of a cnn}{5}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Cnn notation}{5}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Example cnn (not vectorized)}{5}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}Pooling layers}{6}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Fully connected layer}{6}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Why convolutions}{6}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}Forward prop}{6}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}Back prop: $\frac {dL}{db}$}{7}{subsection.2.11}%
+\contentsline {subsubsection}{\numberline {2.11.1}$\frac {dL}{dA^l_{enuv}}$}{7}{subsubsection.2.11.1}%
+\contentsline {subsubsection}{\numberline {2.11.2}$\frac {dA^l_{enuv}}{dZ^l_{enuv}}$}{8}{subsubsection.2.11.2}%
+\contentsline {subsubsection}{\numberline {2.11.3}$\frac {dZ^l_{enuv}}{db^l_n}$}{8}{subsubsection.2.11.3}%
+\contentsline {subsection}{\numberline {2.12}Back prop: $\frac {dL}{dW}$}{9}{subsection.2.12}%
+\contentsline {subsection}{\numberline {2.13}Back prop summary}{9}{subsection.2.13}%
+\contentsline {subsubsection}{\numberline {2.13.1}db: conv 1 $\rightarrow $ conv 2}{9}{subsubsection.2.13.1}%
+\contentsline {subsubsection}{\numberline {2.13.2}db: conv 2 $\rightarrow $ dense}{9}{subsubsection.2.13.2}%
+\contentsline {subsubsection}{\numberline {2.13.3}dw: conv 1 $\rightarrow $ conv 2}{10}{subsubsection.2.13.3}%
+\contentsline {subsubsection}{\numberline {2.13.4}dw: conv 2 $\rightarrow $ dense}{10}{subsubsection.2.13.4}%

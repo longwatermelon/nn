@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1686953896 "nn.tex" "build/nn.pdf" "nn" 1686953896 2
+["pdflatex"] 1686954207 "nn.tex" "build/nn.pdf" "nn" 1686954207 2
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1686171558 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1686171558 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texmf-dist/fonts/tfm/jknappen/ec/tcrm1200.tfm" 1686171558 1536 74b7293ec3713bb7fdca8dd1bd1f469c ""
@@ -210,12 +210,12 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1686171558 40684 9b9ec0b4288972636ff6a3b9c4238efc ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1686196194 4489108 b792e88589579c1ee40003d436ebd5cf ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1686196168 8204075 e9ec073444219799a49cb3e6ce07f56f ""
-  "build/aux/nn.aux" 1686953896 5062 14187353ac9211fd8fe4075ffd56a85a "pdflatex"
-  "build/aux/nn.out" 1686953896 5012 97951f88b375b8e0487acca8b120bdac "pdflatex"
-  "build/aux/nn.toc" 1686953896 3108 09a511b9e95645f85e34aa30e5b43414 "pdflatex"
+  "build/aux/nn.aux" 1686954207 4885 e6b4c589a1580b19fd04e2426ed6ee64 "pdflatex"
+  "build/aux/nn.out" 1686954207 4979 d42645123d57242720b0a9a282ff4afa "pdflatex"
+  "build/aux/nn.toc" 1686954207 2972 950c9dcdf014fc2af27622643183b884 "pdflatex"
   "images/cnn-filter-volume.png" 1686953746 94946 572369f543cf1c786b9890475200e912 ""
   "images/max-pooling.png" 1686953767 46603 48c26a2749cf85686b23304c8df78e2d ""
-  "nn.tex" 1686953896 24958 34e9cb8872ea661c5da061380e5af7be ""
+  "nn.tex" 1686954205 24933 e7883c38e1ac421b274028b70a918e07 ""
   (generated)
   "build/aux/nn.aux"
   "build/aux/nn.log"

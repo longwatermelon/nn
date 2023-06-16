@@ -178,7 +178,43 @@ $db$
 
 \subsection{Convolutional neural network}
 
-\subsubsection{Edge detection}
+
+\subsection{Improving model}
+
+Cross validation: split data into training and test, use test data to determine how well the model generalizes
+
+\subsubsection{Fixing high bias/variance}
+
+High bias (underfit): $J_{train}$ high, $J_{train} \approx J_{cv}$
+
+High variance (overfit): $J_{train}$ may be low, $J_{cv} \gg J_{train}$
+
+High bias and high variance: $J_{train}$ high, $J_{cv} \gg J_{train}$
+
+How to fix:
+
+\begin{enumerate}
+\item Get more training examples (fix high variance)
+\item Try smaller sets of features (fix high variance)
+\item Add more features (fix high bias)
+\item Add polynomial features (fix high bias)
+\item Decrease $\lambda$ (fix high bias)
+\item Increase $\lambda$ (fix high variance)
+\end{enumerate}
+
+\textbf{Neural networks and bias/variance}
+
+If $J_{train}$ is high, make the network larger
+
+If $J_{cv}$ is high, get more data
+
+\subsubsection{Adding data}
+
+Data augmentation: add data with distortions (ex. distorted letters in a letter recognition program)
+
+\section{Convolutional neural network}
+
+\subsection{Edge detection}
 
 Starting with vertical edge detection: Vertical edges can be detected by applying
 a "filter" to an image. ex. with a 6x6 grayscale image convolved with a 3x3 filter:
@@ -260,7 +296,7 @@ more optimal than hand-coded ones:
     \end{pmatrix}
 \]
 
-\subsubsection{Padding}
+\subsection{Padding}
 
 An issue with convolution is that the image shrinks every convolution, and edge information
 is used much less than center information because more areas overlap with center
@@ -272,7 +308,7 @@ set as 0, with thickness denoted as $p$. The image has new dimensions $(n + 2p) 
 (n + 2p)$ for any $p > 0$, so to get the original image back $2p = f - 1 \rightarrow p = (f-1)/2$.
 Because of the division by 2, $f$ is usually odd.
 
-\subsubsection{Strided convolution}
+\subsection{Strided convolution}
 
 Instead of only taking one step at a time when moving the filter across the image, the filter
 moves with some set stride (ex. 2 instead of the default 1)
@@ -280,8 +316,6 @@ moves with some set stride (ex. 2 instead of the default 1)
 The output image dimensions in strided convolution are
 $(\frac{n+2p-f}{s}+1) \times (\frac{n+2p-f}{s}+1)$, and the padding to ensure
 same output dimensions is $p = \frac{(n-1)s+f-n}{2}$.
-
-\subsubsection{Convolution over a volume}
 
 \includegraphics[scale=.5]{images/cnn-filter-volume.png}
 
@@ -293,7 +327,7 @@ all the output images together. For example, given two filters and one input ima
 the output matrix size will be 4x4x2, because there are two different filtered 2D output
 matrices.
 
-\subsubsection{One layer of a cnn}
+\subsection{One layer of a cnn}
 
 Recall from forward prop:
 \begin{gather*}
@@ -306,7 +340,7 @@ $\bm b$ is added to the output 4x4 matrix (element wise) which becomes $Z$, and 
 activation function $g$ is applied to that $Z$, giving the current layer's $A$. The number
 of filters can be seen as the number of features.
 
-\subsubsection{Cnn notation}
+\subsection{Cnn notation}
 
 Superscript $[l]$ means relating to layer $l$.
 
@@ -335,7 +369,7 @@ Vectorized: $W^{[l]}$ = $f^{[l]} \times f^{[l]} \times n_c^{[l-1]} \times n_c^{[
 Bias $\bm b$ is just a vector of length $n_c^{[l]}$, though it becomes more convenient
 to represent it as $1 \times 1 \times 1 \times n_c^{[l]}$ later.
 
-\subsubsection{Example cnn (not vectorized)}
+\subsection{Example cnn (not vectorized)}
 
 Input image $39 \times 39 \times 3$, first layer uses a set of 10 $3 \times 3$ filters,
 second layer uses a set of 20 $5 \times 5$ filters, third layer uses 40 $5 \times 5$
@@ -363,7 +397,7 @@ After the last layer of filters has been processed, flatten out the final output
 A general trend is that the width and height of each channel in a volume of some layer will
 be smaller than the previous layer's, while the number of channels increases as the layers go on.
 
-\subsubsection{Pooling layers}
+\subsection{Pooling layers}
 
 \includegraphics[scale=.5]{images/max-pooling.png}
 
@@ -383,20 +417,12 @@ has is its hyperparameters $f$ and $s$.
 Convolutional and pooling layers are usually grouped together into a single layer because
 the pooling layer has no parameters to learn.
 
-\subsubsection{Fully connected layer}
+\subsection{Fully connected layer}
 
 A fully connected layer is just a regular deepnn layer. $W$ dimensions $n^{[l]} \times n^{[l-1]}$,
 $\bm b$ dimensions $n^{[l]}$.
 
-\subsubsection{Forward prop}
-
-$e$th example, $n$th layer $l$ channel, $j$th layer $l-1$ channel
-\begin{gather*}
-    Z^{[l]}_{en} = \sum_{c=0}^{n_c^{[l-1]}}\text{convolve}(A^{[l-1]}_{ec},W^{[l]}_{cn}) + \bm b^{[l]}_n\\
-    A^{[l]} = g(Z^{[l]})
-\end{gather*}
-
-\subsubsection{Why convolutions}
+\subsection{Why convolutions}
 
 Each filter only needs to learn its own parameters, and then can be applied anywhere on the
 data (for example, in edge detection, a vertical edge filter is able to detect vertical edges
@@ -405,40 +431,13 @@ anywhere on the image after only learning a few parameters.
 Each output depends on less inputs compared to a normal neural network, which improves
 performance.
 
-\subsection{Improving model}
+\subsection{Forward prop}
 
-Cross validation: split data into training and test, use test data to determine how well the model generalizes
-
-\subsubsection{Fixing high bias/variance}
-
-High bias (underfit): $J_{train}$ high, $J_{train} \approx J_{cv}$
-
-High variance (overfit): $J_{train}$ may be low, $J_{cv} \gg J_{train}$
-
-High bias and high variance: $J_{train}$ high, $J_{cv} \gg J_{train}$
-
-How to fix:
-
-\begin{enumerate}
-\item Get more training examples (fix high variance)
-\item Try smaller sets of features (fix high variance)
-\item Add more features (fix high bias)
-\item Add polynomial features (fix high bias)
-\item Decrease $\lambda$ (fix high bias)
-\item Increase $\lambda$ (fix high variance)
-\end{enumerate}
-
-\textbf{Neural networks and bias/variance}
-
-If $J_{train}$ is high, make the network larger
-
-If $J_{cv}$ is high, get more data
-
-\subsubsection{Adding data}
-
-Data augmentation: add data with distortions (ex. distorted letters in a letter recognition program)
-
-\section{Cnn back prop}
+$e$th example, $n$th layer $l$ channel, $j$th layer $l-1$ channel
+\begin{gather*}
+    Z^{[l]}_{en} = \sum_{c=0}^{n_c^{[l-1]}}\text{convolve}(A^{[l-1]}_{ec},W^{[l]}_{cn}) + \bm b^{[l]}_n\\
+    A^{[l]} = g(Z^{[l]})
+\end{gather*}
 
 $A^l$ and $Z^l$ have dimensions $m \times n_c^l \times n_h^l \times n_w^l$
 
@@ -479,7 +478,7 @@ $0 \le s \le n^{l-1}_{pw}$
 Assume that all pooling layers use max pooling, and that the last layer $L$ is a dense layer with
 a single softmax neuron.
 
-\subsection{$\frac{dL}{db}$}
+\subsection{Back prop: $\frac{dL}{db}$}
 
 Using chain rule:
 \begin{gather*}
@@ -605,7 +604,7 @@ $\frac{dL}{db^l_c}$ can then be represented as
 From $Z = \text{convolve}(P^{l-1},W^l) + b^l$ in forward prop:
 \[ \frac{dZ^l_{enuv}}{db^l_n} = 1 \]
 
-\subsection{$\frac{dL}{dW}$}
+\subsection{Back prop: $\frac{dL}{dW}$}
 
 \textbf{For conv $\rightarrow$ dense:}
 
@@ -623,7 +622,7 @@ P^{l-1}_{c,p+u,q+v} \]
 
 Similar to conv to dense, except $\frac{dZ^l_{ecij}}{dW^l_{ncgh}} = A^{l-1}_{c,g+i,h+j}$.
 
-\subsection{Summary}
+\subsection{Back prop summary}
 
 Structure: Conv 1 $\rightarrow$ Conv 2 $\rightarrow$ Dense
 
