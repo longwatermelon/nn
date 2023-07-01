@@ -729,4 +729,50 @@ $0 \le v < n_W^l$
     \frac{dZ^l_{enuv}}{dW^l_{ncgh}} = A^{l-1}_{c,g+i,h+j}\\
 \end{gather*}
 
+\section{Recurrent neural network}
+
+\subsection{Notation}
+
+Superscript $\langle t \rangle$ means the $t$th position in a single example's sequence of data.
+
+$T^{(i)}_x$ = length of input sequence for example $i$
+
+$T^{(i)}_y$ = length of output sequence for example $i$
+
+\subsection{Structure}
+
+\includegraphics[scale=.5]{images/rnn.png}
+
+$\bm a^{\langle 0 \rangle}$ is usually set to all zeroes at first.
+
+All the layers in the image are just a single layer in the real model that revisits itself for
+each item in the $\bm x^{(i)}$ sequence multiple times with new $\bm a$ values.
+
+\subsection{Forward prop}
+
+$W_{ab}$ means $W$ used to compute some $a$ value by multiplying with some $b$ value.
+
+$\bm x$ is a vector because all $x$ values are represented by a one-hot encoding of the $t$th
+sequence item using the model's vocabulary.
+
+For activation functions, tanh or relu are common for calculating $a$, and sigmoid is common
+for calculating $\hat y$.
+
+$W_a$ = $\left[ W_{aa} \bm a^{\langle t-1 \rangle} \ \vdots \ W_{ax} \bm x^{\langle t \rangle} \right]$, or
+$W_a$ = $W_{aa} \bm a^{\langle t-1 \rangle}$ and $W_{ax} \bm x^{\langle t \rangle}$ stacked next to
+each other in one larger matrix.
+
+\begin{gather*}
+    \bm a^{\langle t \rangle} = g(W_a\begin{bmatrix}\bm a^{\langle t-1 \rangle}\\\bm x^{\langle t \rangle}\end{bmatrix}
+        + \bm b_a)\\
+    \hat y^{\langle t \rangle} = g(W_{ya} \bm a^{\langle t \rangle} + \bm b_y)
+\end{gather*}
+
+\subsection{Back prop}
+
+\subsection{RNN variants}
+
+\includegraphics[scale=1.5]{images/rnn-variants.png}
+
 \end{document}
+

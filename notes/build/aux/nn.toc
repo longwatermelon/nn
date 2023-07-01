@@ -31,3 +31,9 @@
 \contentsline {subsubsection}{\numberline {2.13.2}db: conv 2 $\rightarrow $ dense}{9}{subsubsection.2.13.2}%
 \contentsline {subsubsection}{\numberline {2.13.3}dw: conv 1 $\rightarrow $ conv 2}{10}{subsubsection.2.13.3}%
 \contentsline {subsubsection}{\numberline {2.13.4}dw: conv 2 $\rightarrow $ dense}{10}{subsubsection.2.13.4}%
+\contentsline {section}{\numberline {3}Recurrent neural network}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Notation}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Structure}{11}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Forward prop}{11}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Back prop}{11}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}RNN variants}{11}{subsection.3.5}%

@@ -97,7 +97,7 @@ impl Conv {
     fn db(&mut self, front: &Layer) -> Vec<f32> {
         match front {
             Layer::Dense(fl) => {
-                let dlf: Matrix = fl.w.transpose() * &fl.dz;
+                let dlf: Matrix = fl.w.transpose() * fl.dz.clone();
                 let dlp: Shape4 = dlf.reshape_to4(self.p.shape());
 
                 let mut dla: Shape4 = self.a.clone().zero();
@@ -257,7 +257,7 @@ impl Conv {
             Delta::Conv { dw, db } => {
                 for n in 0..self.w.shape().0 {
                     for c in 0..self.w.shape().1 {
-                        *self.w.at_mut(n).at_mut(c) = self.w.at(n).at(c).clone() - &(dw.at(n).at(c).clone() * a);
+                        *self.w.at_mut(n).at_mut(c) = self.w.at(n).at(c).clone() - (dw.at(n).at(c).clone() * a);
                     }
                 }
 
@@ -310,7 +310,7 @@ fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
 
     for c in 0..filter.shape().1 {
         let convolved = input.at(e).at(c).convolve(filter.at(n).at(c));
-        sum = sum + &convolved;
+        sum = sum + convolved;
     }
 
     sum

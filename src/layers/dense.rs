@@ -51,7 +51,7 @@ impl Dense {
     pub fn apply_delta(&mut self, delta: &Delta, a: f32) {
         match delta {
             Delta::Dense { dw, db } => {
-                self.w = self.w.clone() - &(dw.clone() * a);
+                self.w = self.w.clone() - dw.clone() * a;
                 self.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
             },
             _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta)
@@ -66,7 +66,7 @@ impl Prop for Dense {
         self.a = Matrix::new(self.n, x.to_dense().cols());
         let afn = self.afn.getfn();
 
-        self.z = self.w.clone() * &bl.a;
+        self.z = self.w.clone() * bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
         self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
@@ -78,15 +78,15 @@ impl Prop for Dense {
             let fl: Dense = front.to_dense();
 
             let afn = self.afn.getfn_derivative();
-            let left: Matrix = fl.w.transpose() * &fl.dz;
+            let left: Matrix = fl.w.transpose() * fl.dz;
             let right: Matrix = self.z.foreach(|r, c| afn(self.z.at(r, c)));
 
             self.dz = left.element_wise_mul(right);
         } else {
-            self.dz = self.a.clone() - y;
+            self.dz = self.a.clone() - y.clone();
         }
 
-        let dw: Matrix = self.dz.clone() * &bl.a.transpose() * (1. / y.cols() as f32);
+        let dw: Matrix = self.dz.clone() * bl.a.transpose() * (1. / y.cols() as f32);
         let mut db: Vec<f32> = Vec::with_capacity(self.dz.cols());
         for i in 0..self.dz.cols() {
             db.push(self.dz.extract_col(i).iter().sum::<f32>() / y.cols() as f32);

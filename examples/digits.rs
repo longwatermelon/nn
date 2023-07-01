@@ -22,13 +22,13 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     if args.is_empty() {
-        let mut model: Model = Model::from("model/params");
+        let mut model: Model = Model::from("examples/model/params");
         let example0: Vec<f32> = process_image(
-            image::open("data/digits/test0.png").unwrap()
+            image::open("examples/data/digits/test0.png").unwrap()
         );
 
         let example1: Vec<f32> = process_image(
-            image::open("data/digits/test1.png").unwrap()
+            image::open("examples/data/digits/test1.png").unwrap()
         );
 
         let pred0: f32 = model.predict(
@@ -48,7 +48,7 @@ fn main() {
         for i in 0..10 {
             images.push(
                 process_image(
-                    image::open(format!("data/digits/{}0.png", i)
+                    image::open(format!("examples/data/digits/{}0.png", i)
                 ).unwrap())
             );
 
@@ -58,7 +58,7 @@ fn main() {
         for i in 0..10 {
             images.push(
                 process_image(
-                    image::open(format!("data/digits/{}1.png", i)
+                    image::open(format!("examples/data/digits/{}1.png", i)
                 ).unwrap())
             );
 
@@ -73,7 +73,7 @@ fn main() {
         model.push(Layer::dense(15, Activation::Sigmoid));
         model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 5000, 1., true);
-        model.save("model/params");
+        model.save("examples/model/params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
         std::process::exit(1);

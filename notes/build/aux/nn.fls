@@ -989,6 +989,16 @@ INPUT /usr/share/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmmib5.tfm
 INPUT /usr/share/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm
 INPUT /usr/share/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam5.tfm
 INPUT /usr/share/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm5.tfm
+INPUT ./images/rnn.png
+INPUT ./images/rnn.png
+INPUT images/rnn.png
+INPUT ./images/rnn.png
+INPUT ./images/rnn.png
+INPUT ./images/rnn-variants.png
+INPUT ./images/rnn-variants.png
+INPUT images/rnn-variants.png
+INPUT ./images/rnn-variants.png
+INPUT ./images/rnn-variants.png
 INPUT build/aux/nn.aux
 INPUT build/aux/nn.out
 INPUT build/aux/nn.out
