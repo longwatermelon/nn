@@ -35,6 +35,7 @@ pub enum Layer {
 pub trait Prop {
     fn forward_prop(&mut self, back: &Layer, x: &Input);
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta;
+    fn apply_delta(&mut self, delta: &Delta, a: f32);
 }
 
 impl Activation {

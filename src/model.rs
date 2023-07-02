@@ -50,7 +50,7 @@ impl Model {
         for i in 0..epochs {
             self.forward_prop(x);
 
-            if log_progress && (i + 1) % 100 == 0 {
+            if log_progress && (i + 1) % 10 == 0 {
                 print!("\rIteration {} | Cost {:.10}", i + 1, self.cost(y));
                 std::io::stdout().flush().unwrap();
             }

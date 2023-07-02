@@ -59,12 +59,12 @@ impl Matrix {
 
     pub fn atref(&mut self, row: usize, col: usize) -> &mut f32 {
         self.check_valid(row, col);
-        &mut self.data[row][col]
+        &mut self.data.as_mut_slice()[row].as_mut_slice()[col]
     }
 
     pub fn at(&self, row: usize, col: usize) -> f32 {
         self.check_valid(row, col);
-        self.data[row][col]
+        self.data.as_slice()[row].as_slice()[col]
     }
 
     pub fn transpose(&self) -> Matrix {
@@ -297,11 +297,11 @@ impl Shape for Shape3 {
     }
 
     fn at(&self, index: usize) -> &Matrix {
-        &self.data[index]
+        &self.data.as_slice()[index]
     }
 
     fn at_mut(&mut self, index: usize) -> &mut Matrix {
-        &mut self.data[index]
+        &mut self.data.as_mut_slice()[index]
     }
 
     fn data(&self) -> &Vec<Matrix> {
@@ -354,9 +354,9 @@ impl Shape4 {
     pub fn shape(&self) -> (usize, usize, usize, usize) {
         (
             self.data.len(),
-            self.data[0].data().len(),
-            self.data[0].data()[0].rows(),
-            self.data[0].data()[0].cols(),
+            self.data.as_slice()[0].data().len(),
+            self.data.as_slice()[0].data()[0].rows(),
+            self.data.as_slice()[0].data()[0].cols(),
         )
     }
 
@@ -365,7 +365,7 @@ impl Shape4 {
 
         for i in 0..self.shape().0 {
             for j in 0..self.shape().1 {
-                *res.data[i].at_mut(j) = self.data[i].at(j).foreach(|_, _| 0.);
+                *res.data.as_mut_slice()[i].at_mut(j) = self.data.as_slice()[i].at(j).foreach(|_, _| 0.);
             }
         }
 

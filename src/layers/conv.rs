@@ -247,25 +247,6 @@ impl Conv {
 
         dlw
     }
-
-    pub fn apply_delta(&mut self, delta: &Delta, a: f32) {
-        match delta {
-            Delta::Conv { dw, db } => {
-                for n in 0..self.w.shape().0 {
-                    for c in 0..self.w.shape().1 {
-                        *self.w.at_mut(n).at_mut(c) =
-                            self.w.at(n).at(c).clone() - (dw.at(n).at(c).clone() * a);
-                    }
-                }
-
-                self.b
-                    .iter_mut()
-                    .zip(db.iter())
-                    .for_each(|(b, db)| *b -= db * a);
-            }
-            _ => panic!("Delta type mismatch: Conv layer | {:?} delta", delta),
-        }
-    }
 }
 
 impl Prop for Conv {
@@ -302,6 +283,25 @@ impl Prop for Conv {
         let dw: Shape4 = self.dw(&back.to_conv(), front.unwrap(), y.cols());
 
         Delta::Conv { dw, db }
+    }
+
+    fn apply_delta(&mut self, delta: &Delta, a: f32) {
+        match delta {
+            Delta::Conv { dw, db } => {
+                for n in 0..self.w.shape().0 {
+                    for c in 0..self.w.shape().1 {
+                        *self.w.at_mut(n).at_mut(c) =
+                            self.w.at(n).at(c).clone() - dw.at(n).at(c).clone() * a;
+                    }
+                }
+
+                self.b
+                    .iter_mut()
+                    .zip(db.iter())
+                    .for_each(|(b, db)| *b -= db * a);
+            }
+            _ => panic!("Delta type mismatch: Conv layer | {:?} delta", delta),
+        }
     }
 }
 

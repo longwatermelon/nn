@@ -47,19 +47,6 @@ impl Dense {
         self.z = Matrix::new(self.n, m);
         self.dz = Matrix::new(self.n, m);
     }
-
-    pub fn apply_delta(&mut self, delta: &Delta, a: f32) {
-        match delta {
-            Delta::Dense { dw, db } => {
-                self.w = self.w.clone() - dw.clone() * a;
-                self.b
-                    .iter_mut()
-                    .zip(db.iter())
-                    .for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
-            }
-            _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta),
-        }
-    }
 }
 
 impl Prop for Dense {
@@ -98,6 +85,19 @@ impl Prop for Dense {
         }
 
         Delta::Dense { dw, db }
+    }
+
+    fn apply_delta(&mut self, delta: &Delta, a: f32) {
+        match delta {
+            Delta::Dense { dw, db } => {
+                self.w = self.w.clone() - dw.clone() * a;
+                self.b
+                    .iter_mut()
+                    .zip(db.iter())
+                    .for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
+            }
+            _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta),
+        }
     }
 }
 
