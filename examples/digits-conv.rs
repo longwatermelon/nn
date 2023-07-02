@@ -1,6 +1,9 @@
-use nn::model::{Model, Input};
-use nn::layers::{Layer, Activation, pool::{Pooling, PoolType}};
-use nn::matrix::{Matrix, Shape3, Shape4, Shape};
+use nn::layers::{
+    pool::{PoolType, Pooling},
+    Activation, Layer,
+};
+use nn::matrix::{Matrix, Shape, Shape3, Shape4};
+use nn::model::{Input, Model};
 
 use image::{DynamicImage, GenericImageView};
 
@@ -23,33 +26,23 @@ fn main() {
 
     if args.is_empty() {
         let mut model: Model = Model::from("examples/model/params");
-        let example0: Matrix = process_image(
-            image::open("examples/data/digits/test0.png").unwrap()
-        );
+        let example0: Matrix =
+            process_image(image::open("examples/data/digits/test0.png").unwrap());
 
-        let example1: Matrix = process_image(
-            image::open("examples/data/digits/test1.png").unwrap()
-        );
+        let example1: Matrix =
+            process_image(image::open("examples/data/digits/test1.png").unwrap());
 
-        let pred0: f32 = model.predict(
-            &Input::Conv(
-                Shape4::from(
-                    vec![
-                        Shape3::from(vec![example0])
-                    ]
-                )
-            )
-        ).unwrap()[0];
+        let pred0: f32 = model
+            .predict(&Input::Conv(Shape4::from(vec![Shape3::from(vec![
+                example0,
+            ])])))
+            .unwrap()[0];
 
-        let pred1: f32 = model.predict(
-            &Input::Conv(
-                Shape4::from(
-                    vec![
-                        Shape3::from(vec![example1])
-                    ]
-                )
-            )
-        ).unwrap()[0];
+        let pred1: f32 = model
+            .predict(&Input::Conv(Shape4::from(vec![Shape3::from(vec![
+                example1,
+            ])])))
+            .unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
         println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
@@ -58,21 +51,17 @@ fn main() {
         let mut images: Vec<Matrix> = Vec::new();
 
         for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("examples/data/digits/{}0.png", i)
-                ).unwrap())
-            );
+            images.push(process_image(
+                image::open(format!("examples/data/digits/{}0.png", i)).unwrap(),
+            ));
 
             *y.atref(0, i) = 0.;
         }
 
         for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("examples/data/digits/{}1.png", i)
-                ).unwrap())
-            );
+            images.push(process_image(
+                image::open(format!("examples/data/digits/{}1.png", i)).unwrap(),
+            ));
 
             *y.atref(0, i + 10) = 1.;
         }
@@ -85,8 +74,18 @@ fn main() {
 
         let mut model: Model = Model::new();
         model.push(Layer::input(&x));
-        model.push(Layer::conv(6, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
-        model.push(Layer::conv(16, (5, 5), Activation::Relu, Pooling::new(PoolType::Max, 2, 2)));
+        model.push(Layer::conv(
+            6,
+            (5, 5),
+            Activation::Relu,
+            Pooling::new(PoolType::Max, 2, 2),
+        ));
+        model.push(Layer::conv(
+            16,
+            (5, 5),
+            Activation::Relu,
+            Pooling::new(PoolType::Max, 2, 2),
+        ));
         model.push(Layer::dense(1, Activation::Sigmoid));
         model.train(&x, &y, 500, 0.03, true);
         model.save("examples/model/params");

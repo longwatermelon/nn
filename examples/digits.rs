@@ -1,6 +1,6 @@
-use nn::model::{Model, Input};
-use nn::layers::{Layer, Activation};
+use nn::layers::{Activation, Layer};
 use nn::matrix::Matrix;
+use nn::model::{Input, Model};
 
 use image::{DynamicImage, GenericImageView};
 
@@ -23,21 +23,19 @@ fn main() {
 
     if args.is_empty() {
         let mut model: Model = Model::from("examples/model/params");
-        let example0: Vec<f32> = process_image(
-            image::open("examples/data/digits/test0.png").unwrap()
-        );
+        let example0: Vec<f32> =
+            process_image(image::open("examples/data/digits/test0.png").unwrap());
 
-        let example1: Vec<f32> = process_image(
-            image::open("examples/data/digits/test1.png").unwrap()
-        );
+        let example1: Vec<f32> =
+            process_image(image::open("examples/data/digits/test1.png").unwrap());
 
-        let pred0: f32 = model.predict(
-            &Input::Dense(Matrix::from(vec![example0]).transpose())
-        ).unwrap()[0];
+        let pred0: f32 = model
+            .predict(&Input::Dense(Matrix::from(vec![example0]).transpose()))
+            .unwrap()[0];
 
-        let pred1: f32 = model.predict(
-            &Input::Dense(Matrix::from(vec![example1]).transpose())
-        ).unwrap()[0];
+        let pred1: f32 = model
+            .predict(&Input::Dense(Matrix::from(vec![example1]).transpose()))
+            .unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
         println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
@@ -46,21 +44,17 @@ fn main() {
 
         let mut images: Vec<Vec<f32>> = Vec::new();
         for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("examples/data/digits/{}0.png", i)
-                ).unwrap())
-            );
+            images.push(process_image(
+                image::open(format!("examples/data/digits/{}0.png", i)).unwrap(),
+            ));
 
             *y.atref(0, i) = 0.;
         }
 
         for i in 0..10 {
-            images.push(
-                process_image(
-                    image::open(format!("examples/data/digits/{}1.png", i)
-                ).unwrap())
-            );
+            images.push(process_image(
+                image::open(format!("examples/data/digits/{}1.png", i)).unwrap(),
+            ));
 
             *y.atref(0, i + 10) = 1.;
         }
@@ -79,4 +73,3 @@ fn main() {
         std::process::exit(1);
     }
 }
-

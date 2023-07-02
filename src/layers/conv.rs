@@ -2,9 +2,9 @@
 
 use super::layer::*;
 use super::pool::Pooling;
-use crate::matrix::{Matrix, Shape4, Shape};
+use crate::matrix::{Matrix, Shape, Shape4};
 use crate::model::Input;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conv {
@@ -25,7 +25,7 @@ pub struct Conv {
     row_maxes: Vec<Vec<Vec<Vec<usize>>>>,
     col_maxes: Vec<Vec<Vec<Vec<usize>>>>,
 
-    dz: Shape4
+    dz: Shape4,
 }
 
 impl Conv {
@@ -45,14 +45,14 @@ impl Conv {
             p: Shape4::default(),
             row_maxes: Vec::new(),
             col_maxes: Vec::new(),
-            dz: Shape4::default()
+            dz: Shape4::default(),
         }
     }
 
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let (back_nc, back_nh, back_nw) = match bl {
             Layer::Dense(_) => panic!("Dense -> Conv is unsupported."),
-            Layer::Conv(c) => (c.nc, c.p.shape().2, c.p.shape().3)
+            Layer::Conv(c) => (c.nc, c.p.shape().2, c.p.shape().3),
         };
 
         self.nh = back_nh - self.fh + 1;
@@ -74,12 +74,14 @@ impl Conv {
             self.a.shape().0,
             self.a.shape().1,
             self.a.shape().2 / self.pooling.h,
-            self.a.shape().3 / self.pooling.w
+            self.a.shape().3 / self.pooling.w,
         );
 
-        self.row_maxes = vec![vec![vec![vec![0; self.p.shape().3];
-                        self.p.shape().2]; self.p.shape().1];
-                        self.p.shape().0];
+        self.row_maxes =
+            vec![
+                vec![vec![vec![0; self.p.shape().3]; self.p.shape().2]; self.p.shape().1];
+                self.p.shape().0
+            ];
         self.col_maxes = self.row_maxes.clone();
     }
 
@@ -105,13 +107,11 @@ impl Conv {
                     for n in 0..self.p.shape().1 {
                         for y in 0..self.p.shape().2 {
                             for x in 0..self.p.shape().3 {
-                                let (umax, vmax) = (
-                                    self.row_maxes[e][n][y][x],
-                                    self.col_maxes[e][n][y][x]
-                                );
+                                let (umax, vmax) =
+                                    (self.row_maxes[e][n][y][x], self.col_maxes[e][n][y][x]);
 
-                                *dla.at_mut(e).at_mut(n).atref(umax, vmax)
-                                    = dlp.at(e).at(n).at(y, x);
+                                *dla.at_mut(e).at_mut(n).atref(umax, vmax) =
+                                    dlp.at(e).at(n).at(y, x);
                             }
                         }
                     }
@@ -143,17 +143,13 @@ impl Conv {
                 }
 
                 dlb
-            },
+            }
             Layer::Conv(fl) => {
                 let gprime = self.afn.getfn_derivative();
-                let daz: Shape4 = self.z.foreach(|_, m|
-                    m.foreach(|i, j| gprime(m.at(i, j)))
-                );
+                let daz: Shape4 = self.z.foreach(|_, m| m.foreach(|i, j| gprime(m.at(i, j))));
 
                 let dzp: Shape4 = Shape4::new(fl.nc, self.nc, fl.fh, fl.fw)
-                    .foreach(|(n, c), m|
-                        m.foreach(|r, s| fl.w.at(n).at(c).at(r, s))
-                    );
+                    .foreach(|(n, c), m| m.foreach(|r, s| fl.w.at(n).at(c).at(r, s)));
                 let mut dlp: Shape4 = self.p.clone().zero();
                 for e in 0..dlp.shape().0 {
                     for c in 0..dlp.shape().1 {
@@ -165,7 +161,8 @@ impl Conv {
                                         for v in 0..fl.nw {
                                             if r < dzp.shape().2 && s < dzp.shape().3 {
                                                 *dlp.at_mut(e).at_mut(c).atref(r, s) +=
-                                                    fl.dz.at(e).at(n).at(u, v) * dzp.at(n).at(c).at(r, s);
+                                                    fl.dz.at(e).at(n).at(u, v)
+                                                        * dzp.at(n).at(c).at(r, s);
                                             }
                                         }
                                     }
@@ -182,7 +179,7 @@ impl Conv {
                             for s in 0..self.p.shape().3 {
                                 *dla.at_mut(e).at_mut(c).atref(
                                     self.row_maxes[e][c][r][s],
-                                    self.col_maxes[e][c][r][s]
+                                    self.col_maxes[e][c][r][s],
                                 ) = dlp.at(e).at(c).at(r, s);
                             }
                         }
@@ -208,15 +205,12 @@ impl Conv {
     fn dw(&self, bl: &Conv, front: &Layer, m: usize) -> Shape4 {
         let dzw_assign_to: &Shape4 = match front {
             Layer::Dense(_) => &bl.p,
-            Layer::Conv(_) => &bl.a
+            Layer::Conv(_) => &bl.a,
         };
 
         // dzw[p][q].at(e).at(c).at(u, v)
-        let mut dzw: Vec<Vec<Shape4>> = vec![
-            vec![
-                Shape4::new(m, bl.nc, self.nh, self.nw); self.fw
-            ]; self.fh
-        ];
+        let mut dzw: Vec<Vec<Shape4>> =
+            vec![vec![Shape4::new(m, bl.nc, self.nh, self.nw); self.fw]; self.fh];
         for p in 0..dzw.len() {
             for q in 0..dzw[0].len() {
                 for e in 0..m {
@@ -239,9 +233,11 @@ impl Conv {
                     for q in 0..self.fw {
                         // dLW_ncpq
                         for e in 0..m {
-                            *dlw.at_mut(n).at_mut(c).atref(p, q) +=
-                                (0..self.nh).zip(0..self.nw)
-                                .map(|(u, v)| self.dz.at(e).at(n).at(u, v) * dzw[p][q].at(e).at(c).at(u, v))
+                            *dlw.at_mut(n).at_mut(c).atref(p, q) += (0..self.nh)
+                                .zip(0..self.nw)
+                                .map(|(u, v)| {
+                                    self.dz.at(e).at(n).at(u, v) * dzw[p][q].at(e).at(c).at(u, v)
+                                })
                                 .sum::<f32>();
                         }
                     }
@@ -257,13 +253,17 @@ impl Conv {
             Delta::Conv { dw, db } => {
                 for n in 0..self.w.shape().0 {
                     for c in 0..self.w.shape().1 {
-                        *self.w.at_mut(n).at_mut(c) = self.w.at(n).at(c).clone() - (dw.at(n).at(c).clone() * a);
+                        *self.w.at_mut(n).at_mut(c) =
+                            self.w.at(n).at(c).clone() - (dw.at(n).at(c).clone() * a);
                     }
                 }
 
-                self.b.iter_mut().zip(db.iter()).for_each(|(b, db)| *b -= db * a);
-            },
-            _ => panic!("Delta type mismatch: Conv layer | {:?} delta", delta)
+                self.b
+                    .iter_mut()
+                    .zip(db.iter())
+                    .for_each(|(b, db)| *b -= db * a);
+            }
+            _ => panic!("Delta type mismatch: Conv layer | {:?} delta", delta),
         }
     }
 }
@@ -285,8 +285,11 @@ impl Prop for Conv {
         let afn = self.afn.getfn();
         for e in 0..m {
             for n in 0..self.nc {
-                *self.a.at_mut(e).at_mut(n) =
-                    self.z.at(e).at(n).foreach(|r, c| afn(self.z.at(e).at(n).at(r, c)));
+                *self.a.at_mut(e).at_mut(n) = self
+                    .z
+                    .at(e)
+                    .at(n)
+                    .foreach(|r, c| afn(self.z.at(e).at(n).at(r, c)));
             }
         }
 
@@ -305,7 +308,7 @@ impl Prop for Conv {
 fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
     let mut sum: Matrix = Matrix::new(
         input.shape().2 - filter.shape().2 + 1,
-        input.shape().3 - filter.shape().3 + 1
+        input.shape().3 - filter.shape().3 + 1,
     );
 
     for c in 0..filter.shape().1 {
@@ -318,15 +321,24 @@ fn convolve(input: &Shape4, filter: &Shape4, e: usize, n: usize) -> Matrix {
 
 #[cfg(test)]
 mod tests {
+    use super::super::pool::PoolType;
     use super::*;
     use crate::matrix::Shape3;
-    use super::super::pool::PoolType;
 
     #[test]
     fn adjust_dims_conv() {
-        let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
-                                       Pooling::new(PoolType::Max, 2, 2));
-        let mut bl: Layer = Layer::conv(3, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
+        let mut conv: Conv = Conv::new(
+            6,
+            (5, 5),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
+        );
+        let mut bl: Layer = Layer::conv(
+            3,
+            (1, 1),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
+        );
         if let Layer::Conv(bl) = &mut bl {
             bl.a = Shape4::new(1, 3, 32, 32);
         }
@@ -340,99 +352,77 @@ mod tests {
 
     #[test]
     fn conv_maxpool() {
-        let mut conv: Conv = Conv::new(6, (5, 5), Activation::Linear,
-                                        Pooling::new(PoolType::Max, 2, 2));
-        conv.a = Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![1., 2., 3., 4.],
-                                vec![5., 6., 7., 8.],
-                                vec![9., 1., 2., 3.],
-                                vec![4., 5., 6., 7.]
-                            ]
-                        )
-                    ]
-                )
-            ]
+        let mut conv: Conv = Conv::new(
+            6,
+            (5, 5),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
         );
+        conv.a = Shape4::from(vec![Shape3::from(vec![Matrix::from(vec![
+            vec![1., 2., 3., 4.],
+            vec![5., 6., 7., 8.],
+            vec![9., 1., 2., 3.],
+            vec![4., 5., 6., 7.],
+        ])])]);
 
         conv.p = Shape4::new(
             conv.a.shape().0,
             conv.a.shape().1,
             conv.a.shape().2 / conv.pooling.h,
-            conv.a.shape().3 / conv.pooling.w
+            conv.a.shape().3 / conv.pooling.w,
         );
 
-        conv.row_maxes = vec![vec![vec![vec![0; conv.p.shape().3];
-                        conv.p.shape().2]; conv.p.shape().1];
-                        conv.p.shape().0];
+        conv.row_maxes =
+            vec![
+                vec![vec![vec![0; conv.p.shape().3]; conv.p.shape().2]; conv.p.shape().1];
+                conv.p.shape().0
+            ];
         conv.col_maxes = conv.row_maxes.clone();
         conv.pool();
 
-        assert_eq!(conv.row_maxes, vec![
-            vec![
-                vec![
-                    vec![1, 1],
-                    vec![2, 3]
-                ]
-            ]
-        ]);
+        assert_eq!(conv.row_maxes, vec![vec![vec![vec![1, 1], vec![2, 3]]]]);
 
-        assert_eq!(conv.p, Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![6., 8.],
-                                vec![9., 7.]
-                            ]
-                        )
-                    ]
-                )
-            ]
-        ));
+        assert_eq!(
+            conv.p,
+            Shape4::from(vec![Shape3::from(vec![Matrix::from(vec![
+                vec![6., 8.],
+                vec![9., 7.]
+            ])])])
+        );
     }
 
     #[test]
     fn forward_prop() {
-        let mut l: Layer = Layer::conv(1, (3, 3), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
-        let mut prev_l: Layer = Layer::conv(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
-        let x: Input = Input::Conv(Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.],
-                                vec![1., 1., 1., 0., 0., 0.]
-                            ]
-                        )
-                    ]
-                ),
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![0., 0., 0., 1., 1., 1.],
-                                vec![0., 0., 0., 1., 1., 1.],
-                                vec![0., 0., 0., 1., 1., 1.],
-                                vec![0., 0., 0., 1., 1., 1.],
-                                vec![0., 0., 0., 1., 1., 1.],
-                                vec![0., 0., 0., 1., 1., 1.]
-                            ]
-                        )
-                    ]
-                )
-            ]
-        ));
+        let mut l: Layer = Layer::conv(
+            1,
+            (3, 3),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
+        );
+        let mut prev_l: Layer = Layer::conv(
+            1,
+            (1, 1),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
+        );
+        let x: Input = Input::Conv(Shape4::from(vec![
+            Shape3::from(vec![Matrix::from(vec![
+                vec![1., 1., 1., 0., 0., 0.],
+                vec![1., 1., 1., 0., 0., 0.],
+                vec![1., 1., 1., 0., 0., 0.],
+                vec![1., 1., 1., 0., 0., 0.],
+                vec![1., 1., 1., 0., 0., 0.],
+                vec![1., 1., 1., 0., 0., 0.],
+            ])]),
+            Shape3::from(vec![Matrix::from(vec![
+                vec![0., 0., 0., 1., 1., 1.],
+                vec![0., 0., 0., 1., 1., 1.],
+                vec![0., 0., 0., 1., 1., 1.],
+                vec![0., 0., 0., 1., 1., 1.],
+                vec![0., 0., 0., 1., 1., 1.],
+                vec![0., 0., 0., 1., 1., 1.],
+            ])]),
+        ]));
 
         if let Layer::Conv(c) = &mut prev_l {
             c.a = x.to_conv();
@@ -442,111 +432,75 @@ mod tests {
         if let Layer::Conv(c) = &mut l {
             c.adjust_dims(&prev_l, 2);
             c.b.iter_mut().for_each(|b| *b = 1.);
-            c.w = Shape4::from(vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(vec![
-                            vec![1., 0., -1.],
-                            vec![1., 0., -1.],
-                            vec![1., 0., -1.]
-                        ])
-                        // Matrix::from(vec![
-                        //     vec![1., 0., -1.],
-                        //     vec![1., 0., -1.],
-                        //     vec![1., 0., -1.]
-                        // ])
-                    ]
-                )
-            ]);
+            c.w = Shape4::from(vec![Shape3::from(vec![
+                Matrix::from(vec![
+                    vec![1., 0., -1.],
+                    vec![1., 0., -1.],
+                    vec![1., 0., -1.],
+                ]), // Matrix::from(vec![
+                    //     vec![1., 0., -1.],
+                    //     vec![1., 0., -1.],
+                    //     vec![1., 0., -1.]
+                    // ])
+            ])]);
 
             c.forward_prop(&prev_l, &x);
 
-            assert_eq!(c.a, Shape4::from(
-                vec![
-                    Shape3::from(
-                        vec![
-                            Matrix::from(
-                                vec![
-                                    vec![1., 4., 4., 1.],
-                                    vec![1., 4., 4., 1.],
-                                    vec![1., 4., 4., 1.],
-                                    vec![1., 4., 4., 1.]
-                                ]
-                            ),
-                        ]
-                    ),
-                    Shape3::from(
-                        vec![
-                            Matrix::from(
-                                vec![
-                                    vec![1., -2., -2., 1.],
-                                    vec![1., -2., -2., 1.],
-                                    vec![1., -2., -2., 1.],
-                                    vec![1., -2., -2., 1.]
-                                ]
-                            ),
-                        ]
-                    )
-                ]
-            ));
+            assert_eq!(
+                c.a,
+                Shape4::from(vec![
+                    Shape3::from(vec![Matrix::from(vec![
+                        vec![1., 4., 4., 1.],
+                        vec![1., 4., 4., 1.],
+                        vec![1., 4., 4., 1.],
+                        vec![1., 4., 4., 1.]
+                    ]),]),
+                    Shape3::from(vec![Matrix::from(vec![
+                        vec![1., -2., -2., 1.],
+                        vec![1., -2., -2., 1.],
+                        vec![1., -2., -2., 1.],
+                        vec![1., -2., -2., 1.]
+                    ]),])
+                ])
+            );
         }
     }
 
     #[test]
     fn delta() {
-        let mut layer: Conv = Conv::new(1, (1, 1), Activation::Linear, Pooling::new(PoolType::Max, 2, 2));
-        layer.w = Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![0., 0.],
-                                vec![0., 0.]
-                            ]
-                        )
-                    ]
-                )
-            ]
+        let mut layer: Conv = Conv::new(
+            1,
+            (1, 1),
+            Activation::Linear,
+            Pooling::new(PoolType::Max, 2, 2),
         );
+        layer.w = Shape4::from(vec![Shape3::from(vec![Matrix::from(vec![
+            vec![0., 0.],
+            vec![0., 0.],
+        ])])]);
 
         layer.b = vec![0.; 10];
 
-        let dw: Shape4 = Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![2., 2.],
-                                vec![2., 2.]
-                            ]
-                        )
-                    ]
-                )
-            ]
-        );
+        let dw: Shape4 = Shape4::from(vec![Shape3::from(vec![Matrix::from(vec![
+            vec![2., 2.],
+            vec![2., 2.],
+        ])])]);
 
         let db: Vec<f32> = vec![1.; 10];
 
-        let delta: Delta = Delta::Conv { dw: dw.clone(), db: db.clone() };
+        let delta: Delta = Delta::Conv {
+            dw: dw.clone(),
+            db: db.clone(),
+        };
         layer.apply_delta(&delta, 1.);
 
-        assert_eq!(layer.w, Shape4::from(
-            vec![
-                Shape3::from(
-                    vec![
-                        Matrix::from(
-                            vec![
-                                vec![-2., -2.],
-                                vec![-2., -2.]
-                            ]
-                        )
-                    ]
-                )
-            ]
-        ));
+        assert_eq!(
+            layer.w,
+            Shape4::from(vec![Shape3::from(vec![Matrix::from(vec![
+                vec![-2., -2.],
+                vec![-2., -2.]
+            ])])])
+        );
         assert_eq!(layer.b, vec![-1.; 10]);
     }
 }
-

@@ -1,7 +1,7 @@
 use super::layer::*;
 use crate::matrix::Matrix;
 use crate::model::Input;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Dense {
@@ -13,7 +13,7 @@ pub struct Dense {
     pub a: Matrix,
     z: Matrix,
 
-    pub(crate) dz: Matrix
+    pub(crate) dz: Matrix,
 }
 
 impl Dense {
@@ -25,14 +25,14 @@ impl Dense {
             afn,
             a: Matrix::new(1, 1),
             z: Matrix::new(1, 1),
-            dz: Matrix::new(1, 1)
+            dz: Matrix::new(1, 1),
         }
     }
 
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let back_n: usize = match bl {
             Layer::Dense(d) => d.n,
-            Layer::Conv(_) => bl.to_dense().a.rows()
+            Layer::Conv(_) => bl.to_dense().a.rows(),
         };
 
         self.w = Matrix::new(self.n, back_n);
@@ -52,9 +52,12 @@ impl Dense {
         match delta {
             Delta::Dense { dw, db } => {
                 self.w = self.w.clone() - dw.clone() * a;
-                self.b.iter_mut().zip(db.iter()).for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
-            },
-            _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta)
+                self.b
+                    .iter_mut()
+                    .zip(db.iter())
+                    .for_each(|(b, db): (&mut f32, &f32)| *b -= db * a);
+            }
+            _ => panic!("Delta type mismatch: Dense layer | {:?} delta", delta),
         }
     }
 }
@@ -68,7 +71,9 @@ impl Prop for Dense {
 
         self.z = self.w.clone() * bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
-        self.a = self.a.foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
+        self.a = self
+            .a
+            .foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
@@ -92,9 +97,7 @@ impl Prop for Dense {
             db.push(self.dz.extract_col(i).iter().sum::<f32>() / y.cols() as f32);
         }
 
-        Delta::Dense {
-            dw, db
-        }
+        Delta::Dense { dw, db }
     }
 }
 
@@ -118,4 +121,3 @@ mod tests {
         assert_eq!(dense.dz.cols(), 2);
     }
 }
-

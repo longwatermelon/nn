@@ -1,20 +1,20 @@
-use std::ops;
 use rand::Rng;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::ops;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Matrix {
-    data: Vec<Vec<f32>>
+    data: Vec<Vec<f32>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Shape3 {
-    data: Vec<Matrix>
+    data: Vec<Matrix>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Shape4 {
-    data: Vec<Shape3>
+    data: Vec<Shape3>,
 }
 
 pub trait Shape {
@@ -30,7 +30,7 @@ pub trait Shape {
 impl Matrix {
     pub fn new(rows: usize, cols: usize) -> Self {
         Self {
-            data: vec![vec![0.; cols]; rows]
+            data: vec![vec![0.; cols]; rows],
         }
     }
 
@@ -52,10 +52,9 @@ impl Matrix {
     }
 
     pub fn random_init(&mut self, lower: f32, upper: f32) {
-        *self = self.foreach(
-            |_, _| rand::thread_rng().gen_range(0..1000) as f32 / 1000. *
-                   (upper - lower) + lower
-        );
+        *self = self.foreach(|_, _| {
+            rand::thread_rng().gen_range(0..1000) as f32 / 1000. * (upper - lower) + lower
+        });
     }
 
     pub fn atref(&mut self, row: usize, col: usize) -> &mut f32 {
@@ -87,8 +86,8 @@ impl Matrix {
 
         for r in 0..res.rows() {
             for c in 0..res.cols() {
-                *res.atref(r, c) = filter.foreach(
-                        |fr, fc| self.at(r + fr, c + fc) * filter.at(fr, fc))
+                *res.atref(r, c) = filter
+                    .foreach(|fr, fc| self.at(r + fr, c + fc) * filter.at(fr, fc))
                     .flatten()
                     .iter()
                     .sum();
@@ -156,16 +155,17 @@ impl Matrix {
     }
 
     pub fn sum(&self) -> f32 {
-        self.data.iter()
-            .flatten()
-            .fold(0., |acc, &x| acc + x)
+        self.data.iter().flatten().fold(0., |acc, &x| acc + x)
     }
 
     pub fn check_valid(&self, row: usize, col: usize) {
         if row >= self.rows() || col >= self.cols() {
             panic!(
                 "Error: {}x{} matrix indexed with ({},{})",
-                self.rows(), self.cols(), row, col
+                self.rows(),
+                self.cols(),
+                row,
+                col
             );
         }
     }
@@ -284,7 +284,7 @@ impl ops::Sub<Matrix> for Matrix {
 impl Shape3 {
     pub fn new(channels: usize, rows: usize, cols: usize) -> Self {
         Self {
-            data: vec![Matrix::new(rows, cols); channels]
+            data: vec![Matrix::new(rows, cols); channels],
         }
     }
 }
@@ -293,9 +293,7 @@ impl Shape for Shape3 {
     type T = Shape3;
     type Enclosed = Matrix;
     fn flatten(&self) -> Vec<f32> {
-        self.data.iter()
-                 .flat_map(|x| x.flatten())
-                 .collect()
+        self.data.iter().flat_map(|x| x.flatten()).collect()
     }
 
     fn at(&self, index: usize) -> &Matrix {
@@ -324,7 +322,7 @@ impl From<Vec<Matrix>> for Shape3 {
 impl Shape4 {
     pub fn new(blocks: usize, channels: usize, rows: usize, cols: usize) -> Self {
         Self {
-            data: vec![Shape3::new(channels, rows, cols); blocks]
+            data: vec![Shape3::new(channels, rows, cols); blocks],
         }
     }
 
@@ -354,8 +352,12 @@ impl Shape4 {
     }
 
     pub fn shape(&self) -> (usize, usize, usize, usize) {
-        (self.data.len(), self.data[0].data().len(),
-        self.data[0].data()[0].rows(), self.data[0].data()[0].cols())
+        (
+            self.data.len(),
+            self.data[0].data().len(),
+            self.data[0].data()[0].rows(),
+            self.data[0].data()[0].cols(),
+        )
     }
 
     pub fn zero(&self) -> Self {
@@ -397,9 +399,7 @@ impl Shape for Shape4 {
     type T = Shape4;
     type Enclosed = Shape3;
     fn flatten(&self) -> Vec<f32> {
-        self.data.iter()
-                 .flat_map(|x| x.flatten())
-                 .collect()
+        self.data.iter().flat_map(|x| x.flatten()).collect()
     }
 
     fn at(&self, index: usize) -> &Shape3 {
@@ -431,11 +431,7 @@ mod tests {
 
     #[test]
     fn transpose() {
-        let m: Matrix = Matrix::from(vec![
-            vec![1., 2., 3.],
-            vec![4., 5., 6.],
-            vec![7., 8., 9.]
-        ]);
+        let m: Matrix = Matrix::from(vec![vec![1., 2., 3.], vec![4., 5., 6.], vec![7., 8., 9.]]);
         let transpose: Matrix = m.transpose();
 
         assert_eq!(transpose.rows(), m.cols());
@@ -450,11 +446,8 @@ mod tests {
 
     #[test]
     fn foreach() {
-        let mut m: Matrix = Matrix::from(vec![
-            vec![1., 1., 1.],
-            vec![1., 1., 1.],
-            vec![1., 1., 1.]
-        ]);
+        let mut m: Matrix =
+            Matrix::from(vec![vec![1., 1., 1.], vec![1., 1., 1.], vec![1., 1., 1.]]);
         m = m.foreach(|r, c| m.at(r, c) + 1.);
 
         for r in 0..m.rows() {
@@ -466,10 +459,7 @@ mod tests {
 
     #[test]
     fn extract() {
-        let m: Matrix = Matrix::from(vec![
-            vec![1., 2., 3.],
-            vec![4., 5., 6.]
-        ]);
+        let m: Matrix = Matrix::from(vec![vec![1., 2., 3.], vec![4., 5., 6.]]);
 
         let row: Vec<f32> = m.extract_row(0);
         let col: Vec<f32> = m.extract_col(1);
@@ -480,68 +470,41 @@ mod tests {
 
     #[test]
     fn elementwise() {
-        let a: Matrix = Matrix::from(vec![
-            vec![2., 2., 2.],
-            vec![2., 2., 2.]
-        ]);
+        let a: Matrix = Matrix::from(vec![vec![2., 2., 2.], vec![2., 2., 2.]]);
 
-        let b: Matrix = Matrix::from(vec![
-            vec![1., 2., 3.],
-            vec![2., 3., 4.]
-        ]);
+        let b: Matrix = Matrix::from(vec![vec![1., 2., 3.], vec![2., 3., 4.]]);
 
         let mul: Matrix = a.element_wise_mul(b);
-        assert_eq!(mul,
-            Matrix::from(vec![
-                vec![2., 4., 6.],
-                vec![4., 6., 8.]
-            ])
-        );
+        assert_eq!(mul, Matrix::from(vec![vec![2., 4., 6.], vec![4., 6., 8.]]));
     }
 
     #[test]
     fn multiplication() {
-        let a: Matrix = Matrix::from(vec![
-            vec![2., 1., 4.],
-            vec![0., 1., 1.]
-        ]);
+        let a: Matrix = Matrix::from(vec![vec![2., 1., 4.], vec![0., 1., 1.]]);
 
         let b: Matrix = Matrix::from(vec![
             vec![6., 3., -1., 0.],
             vec![1., 1., 0., 4.],
-            vec![-2., 5., 0., 2.]
+            vec![-2., 5., 0., 2.],
         ]);
 
-        assert_eq!(a * b,
-            Matrix::from(vec![
-                vec![5., 27., -2., 12.],
-                vec![-1., 6., 0., 6.]
-            ])
+        assert_eq!(
+            a * b,
+            Matrix::from(vec![vec![5., 27., -2., 12.], vec![-1., 6., 0., 6.]])
         );
     }
 
     #[test]
     fn addition() {
-        let a: Matrix = Matrix::from(vec![
-            vec![1., 1.],
-            vec![1., 1.]
-        ]);
+        let a: Matrix = Matrix::from(vec![vec![1., 1.], vec![1., 1.]]);
 
         let b: Matrix = a.clone();
-        assert_eq!(a + b,
-            Matrix::from(vec![
-                vec![2., 2.],
-                vec![2., 2.]
-            ])
-        );
+        assert_eq!(a + b, Matrix::from(vec![vec![2., 2.], vec![2., 2.]]));
     }
 
     #[test]
     fn mat_flatten() {
-        let a: Matrix = Matrix::from(vec![
-            vec![1., 2.],
-            vec![3., 4.]
-        ]);
+        let a: Matrix = Matrix::from(vec![vec![1., 2.], vec![3., 4.]]);
 
         let v: Vec<f32> = a.flatten();
         assert_eq!(v, [1., 2., 3., 4.]);
@@ -551,25 +514,13 @@ mod tests {
     fn shape4_flatten() {
         let a: Shape4 = Shape4::from(vec![
             Shape3::from(vec![
-                Matrix::from(vec![
-                    vec![1., 2.],
-                    vec![3., 4.]
-                ]),
-                Matrix::from(vec![
-                    vec![5., 6.],
-                    vec![7., 8.]
-                ]),
+                Matrix::from(vec![vec![1., 2.], vec![3., 4.]]),
+                Matrix::from(vec![vec![5., 6.], vec![7., 8.]]),
             ]),
             Shape3::from(vec![
-                Matrix::from(vec![
-                    vec![9., 10.],
-                    vec![11., 12.]
-                ]),
-                Matrix::from(vec![
-                    vec![13., 14.],
-                    vec![15., 16.]
-                ]),
-            ])
+                Matrix::from(vec![vec![9., 10.], vec![11., 12.]]),
+                Matrix::from(vec![vec![13., 14.], vec![15., 16.]]),
+            ]),
         ]);
 
         let v: Vec<f32> = a.flatten();
@@ -584,22 +535,25 @@ mod tests {
             vec![1., 1., 1., 0., 0., 0.],
             vec![1., 1., 1., 0., 0., 0.],
             vec![1., 1., 1., 0., 0., 0.],
-            vec![1., 1., 1., 0., 0., 0.]
+            vec![1., 1., 1., 0., 0., 0.],
         ]);
 
         let filter: Matrix = Matrix::from(vec![
             vec![1., 0., -1.],
             vec![1., 0., -1.],
-            vec![1., 0., -1.]
+            vec![1., 0., -1.],
         ]);
 
         let output: Matrix = input.convolve(&filter);
-        assert_eq!(output, Matrix::from(vec![
-            vec![0., 3., 3., 0.],
-            vec![0., 3., 3., 0.],
-            vec![0., 3., 3., 0.],
-            vec![0., 3., 3., 0.]
-        ]));
+        assert_eq!(
+            output,
+            Matrix::from(vec![
+                vec![0., 3., 3., 0.],
+                vec![0., 3., 3., 0.],
+                vec![0., 3., 3., 0.],
+                vec![0., 3., 3., 0.]
+            ])
+        );
     }
 
     #[test]
@@ -613,43 +567,26 @@ mod tests {
 
         let shape = (2, 2, 3, 1);
         let reshaped: Shape4 = input.reshape_to4(shape);
-        assert_eq!(reshaped.flatten(), (1..=12).map(|x| x as f32).collect::<Vec<f32>>());
+        assert_eq!(
+            reshaped.flatten(),
+            (1..=12).map(|x| x as f32).collect::<Vec<f32>>()
+        );
     }
 
     #[test]
     fn matsum() {
-        let m: Matrix = Matrix::from(vec![
-            vec![1., 1., 1.],
-            vec![2., 2., 2.]
-        ]);
+        let m: Matrix = Matrix::from(vec![vec![1., 1., 1.], vec![2., 2., 2.]]);
 
         assert_eq!(m.sum(), 9.);
     }
 
     #[test]
     fn shape4sum() {
-        let s: Shape4 = Shape4::from(
-            vec![
-                Shape3::from(vec![
-                    Matrix::from(
-                        vec![
-                            vec![1., 2., 3.],
-                            vec![4., 5., 6.]
-                        ]
-                    )
-                ]),
-                Shape3::from(vec![
-                    Matrix::from(
-                        vec![
-                            vec![1., 2., 3.],
-                            vec![4., 5., 6.]
-                        ]
-                    )
-                ])
-            ]
-        );
+        let s: Shape4 = Shape4::from(vec![
+            Shape3::from(vec![Matrix::from(vec![vec![1., 2., 3.], vec![4., 5., 6.]])]),
+            Shape3::from(vec![Matrix::from(vec![vec![1., 2., 3.], vec![4., 5., 6.]])]),
+        ]);
 
         assert_eq!(s.sum(), 42.);
     }
 }
-

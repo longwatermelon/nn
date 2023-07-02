@@ -1,16 +1,16 @@
 use crate::matrix::Matrix;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum PoolType {
-    Max
+    Max,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pooling {
     ptype: PoolType,
     pub(crate) w: usize,
-    pub(crate) h: usize
+    pub(crate) h: usize,
 }
 
 impl Pooling {
@@ -35,9 +35,15 @@ impl Pooling {
         }
     }
 
-    fn pool_one(&self, input: &Matrix, res: &mut Matrix,
-                row_maxes: &mut [Vec<usize>], col_maxes: &mut [Vec<usize>],
-                row: usize, col: usize) {
+    fn pool_one(
+        &self,
+        input: &Matrix,
+        res: &mut Matrix,
+        row_maxes: &mut [Vec<usize>],
+        col_maxes: &mut [Vec<usize>],
+        row: usize,
+        col: usize,
+    ) {
         match self.ptype {
             PoolType::Max => {
                 let mut largest: f32 = f32::NEG_INFINITY;
@@ -45,10 +51,7 @@ impl Pooling {
 
                 for dr in 0..self.h {
                     for dc in 0..self.w {
-                        let i: (usize, usize) = (
-                            row * self.h + dr,
-                            col * self.w + dc
-                        );
+                        let i: (usize, usize) = (row * self.h + dr, col * self.w + dc);
                         let a: f32 = input.at(i.0, i.1);
 
                         if a > largest {
@@ -76,7 +79,7 @@ mod tests {
             vec![1., 2., 3., 4.],
             vec![5., 6., 7., 8.],
             vec![9., 1., 2., 3.],
-            vec![4., 5., 6., 7.]
+            vec![4., 5., 6., 7.],
         ]);
 
         let pooling: Pooling = Pooling::new(PoolType::Max, 2, 2);
@@ -87,4 +90,3 @@ mod tests {
         assert_eq!(cm, vec![vec![1, 3], vec![0, 3]]);
     }
 }
-

@@ -1,30 +1,28 @@
-use crate::layers::{Layer, Prop, Delta, dense::Dense};
-use crate::matrix::{Matrix, Shape4, Shape};
-use serde::{Serialize, Deserialize};
+pub use crate::layers::Input;
+
+use crate::layers::{dense::Dense, Delta, Layer, Prop};
+use crate::matrix::Matrix;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs::File;
 use std::io::{Read, Write};
 
 #[derive(Debug)]
 pub struct Error {
-    msg: String
+    msg: String,
 }
 
 impl Error {
     pub fn new(msg: &str) -> Self {
-        Self { msg: msg.to_string() }
+        Self {
+            msg: msg.to_string(),
+        }
     }
-}
-
-#[derive(Clone)]
-pub enum Input {
-    Dense(Matrix),
-    Conv(Shape4)
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Model {
-    layers: Vec<Layer>
+    layers: Vec<Layer>,
 }
 
 impl fmt::Display for Error {
@@ -33,41 +31,9 @@ impl fmt::Display for Error {
     }
 }
 
-impl Input {
-    pub fn to_dense(&self) -> Matrix {
-        match self {
-            Input::Dense(a) => a.clone(),
-            Input::Conv(a) => {
-                let f: Vec<f32> = a.flatten();
-                let mut m: Matrix = Matrix::new(f.len() / a.shape().0, a.shape().0);
-                let mut index: usize = 0;
-                for c in 0..m.cols() {
-                    for r in 0..m.rows() {
-                        *m.atref(r, c) = f[index];
-                        index += 1;
-                    }
-                }
-
-                m
-            }
-        }
-    }
-
-    /// Panics if self is not conv.
-    pub fn to_conv(&self) -> Shape4 {
-        if let Input::Conv(c) = self {
-            c.clone()
-        } else {
-            panic!("Dense -> Conv is unsupported.")
-        }
-    }
-}
-
 impl Model {
     pub fn new() -> Self {
-        Self {
-            layers: Vec::new()
-        }
+        Self { layers: Vec::new() }
     }
 
     pub fn from(path: &str) -> Self {
@@ -109,7 +75,8 @@ impl Model {
 
     pub fn save(&self, path: &str) {
         let mut file = File::create(path).unwrap();
-        file.write_all(serde_json::to_string(self).unwrap().as_bytes()).unwrap();
+        file.write_all(serde_json::to_string(self).unwrap().as_bytes())
+            .unwrap();
     }
 
     fn adjust_layer_dims(&mut self, x: &Input, include_parameters: bool) {
@@ -119,8 +86,20 @@ impl Model {
             let [bl, l, ..] = self.layers[(i - 1)..].as_mut() else { unreachable!() };
 
             match l {
-                Layer::Dense(d) => if include_parameters { d.adjust_dims(bl, x.to_dense().cols()) } else { d.adjust_nonparameter_dims(x.to_dense().cols()) },
-                Layer::Conv(c) => if include_parameters { c.adjust_dims(bl, x.to_conv().shape().0) } else { c.adjust_nonparameter_dims(x.to_conv().shape().0) }
+                Layer::Dense(d) => {
+                    if include_parameters {
+                        d.adjust_dims(bl, x.to_dense().cols())
+                    } else {
+                        d.adjust_nonparameter_dims(x.to_dense().cols())
+                    }
+                }
+                Layer::Conv(c) => {
+                    if include_parameters {
+                        c.adjust_dims(bl, x.to_conv().shape().0)
+                    } else {
+                        c.adjust_nonparameter_dims(x.to_conv().shape().0)
+                    }
+                }
             }
         }
     }
@@ -133,7 +112,7 @@ impl Model {
 
             match l {
                 Layer::Dense(d) => d.forward_prop(back, x),
-                Layer::Conv(c) => c.forward_prop(back, x)
+                Layer::Conv(c) => c.forward_prop(back, x),
             };
         }
     }
@@ -155,12 +134,8 @@ impl Model {
             }
 
             match l {
-                Layer::Dense(d) => deltas.insert(0,
-                    d.back_prop(back, f, y)
-                ),
-                Layer::Conv(c) => deltas.insert(0,
-                    c.back_prop(back, f, y)
-                )
+                Layer::Dense(d) => deltas.insert(0, d.back_prop(back, f, y)),
+                Layer::Conv(c) => deltas.insert(0, c.back_prop(back, f, y)),
             };
         }
 
@@ -190,11 +165,12 @@ impl Model {
             let d: Dense = last.to_dense();
             for r in 0..y.rows() {
                 for c in 0..y.cols() {
-                    sum += y.at(r, c) * if d.a.at(r, c) == 0. {
-                        0.
-                    } else {
-                        f32::ln(d.a.at(r, c))
-                    };
+                    sum += y.at(r, c)
+                        * if d.a.at(r, c) == 0. {
+                            0.
+                        } else {
+                            f32::ln(d.a.at(r, c))
+                        };
                 }
             }
         }
@@ -222,9 +198,7 @@ mod tests {
     }
 
     fn get_y() -> Matrix {
-        Matrix::from(vec![
-            vec![1., 1., 0., 0.]
-        ])
+        Matrix::from(vec![vec![1., 1., 0., 0.]])
     }
 
     fn get_nf() -> usize {
@@ -244,14 +218,10 @@ mod tests {
         let mut model: Model = get_model();
         model.train(&get_x(), &get_y(), 1000, 0.5, false);
 
-        let prediction: f32 = model.predict(
-            &Input::Dense(Matrix::from(vec![
-                vec![0.],
-                vec![1.]
-            ]))
-        ).unwrap()[0];
+        let prediction: f32 = model
+            .predict(&Input::Dense(Matrix::from(vec![vec![0.], vec![1.]])))
+            .unwrap()[0];
 
         assert!(prediction > 0.5);
     }
 }
-
