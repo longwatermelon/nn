@@ -343,7 +343,7 @@ mod tests {
             Pooling::new(PoolType::Max, 2, 2),
         );
         if let Layer::Conv(bl) = &mut bl {
-            bl.a = Shape4::new(1, 3, 32, 32);
+            bl.p = Shape4::new(1, 3, 32, 32);
         }
 
         conv.adjust_dims(&bl, 1);
