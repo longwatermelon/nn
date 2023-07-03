@@ -33,6 +33,7 @@ impl Dense {
         let back_n: usize = match bl {
             Layer::Dense(d) => d.n,
             Layer::Conv(_) => bl.to_dense().a.rows(),
+            Layer::Rnn(_) => todo!(),
         };
 
         self.w = Matrix::new(self.n, back_n);

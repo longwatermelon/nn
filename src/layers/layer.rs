@@ -1,6 +1,7 @@
 use super::{
     conv::Conv,
     dense::Dense,
+    rnn::Rnn,
     pool::{PoolType, Pooling},
 };
 use crate::matrix::{Matrix, Shape, Shape4};
@@ -24,12 +25,14 @@ pub enum Delta {
 pub enum Input {
     Dense(Matrix),
     Conv(Shape4),
+    Rnn(Matrix),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Layer {
     Dense(Dense),
     Conv(Conv),
+    Rnn(Rnn),
 }
 
 pub trait Prop {
@@ -70,6 +73,7 @@ impl Input {
     pub fn to_dense(&self) -> Matrix {
         match self {
             Input::Dense(a) => a.clone(),
+            Input::Rnn(a) => a.clone(),
             Input::Conv(a) => {
                 let f: Vec<f32> = a.flatten();
                 let mut m: Matrix = Matrix::new(f.len() / a.shape().0, a.shape().0);
@@ -82,7 +86,7 @@ impl Input {
                 }
 
                 m
-            }
+            },
         }
     }
 
@@ -105,6 +109,10 @@ impl Layer {
         Layer::Conv(Conv::new(filters, fshape, afn, pooling))
     }
 
+    pub fn rnn(n: usize) -> Self {
+        Layer::Rnn(Rnn::new(n))
+    }
+
     pub fn input(x: &Input) -> Self {
         match x {
             Input::Dense(a) => Layer::dense(a.rows(), Activation::Linear),
@@ -114,6 +122,7 @@ impl Layer {
                 Activation::Linear,
                 Pooling::new(PoolType::Max, 1, 1),
             ),
+            Input::Rnn(a) => Layer::rnn(a.rows()),
         }
     }
 
@@ -126,7 +135,8 @@ impl Layer {
                 res.a = a;
 
                 res
-            }
+            },
+            Layer::Rnn(_) => todo!(),
         }
     }
 
@@ -134,6 +144,7 @@ impl Layer {
         match self {
             Layer::Dense(_) => panic!("Dense to conv not supported."),
             Layer::Conv(c) => c.clone(),
+            Layer::Rnn(_) => panic!("Rnn to conv not supported."),
         }
     }
 
@@ -141,6 +152,7 @@ impl Layer {
         match self {
             Layer::Dense(l) => l.apply_delta(delta, a),
             Layer::Conv(l) => l.apply_delta(delta, a),
+            Layer::Rnn(l) => l.apply_delta(delta, a),
         }
     }
 }

@@ -52,6 +52,7 @@ impl Conv {
     pub fn adjust_dims(&mut self, bl: &Layer, m: usize) {
         let (back_nc, back_nh, back_nw) = match bl {
             Layer::Dense(_) => panic!("Dense -> Conv is unsupported."),
+            Layer::Rnn(_) => panic!("Rnn -> Conv is unsupported."),
             Layer::Conv(c) => (c.nc, c.p.shape().2, c.p.shape().3),
         };
 
@@ -143,7 +144,7 @@ impl Conv {
                 }
 
                 dlb
-            }
+            },
             Layer::Conv(fl) => {
                 let gprime = self.afn.getfn_derivative();
                 let daz: Shape4 = self.z.foreach(|_, m| m.foreach(|i, j| gprime(m.at(i, j))));
@@ -198,7 +199,8 @@ impl Conv {
                 }
 
                 dlb
-            }
+            },
+            Layer::Rnn(_) => unreachable!(),
         }
     }
 
@@ -206,6 +208,7 @@ impl Conv {
         let dzw_assign_to: &Shape4 = match front {
             Layer::Dense(_) => &bl.p,
             Layer::Conv(_) => &bl.a,
+            Layer::Rnn(_) => panic!("Rnn with conv is unsupported."),
         };
 
         // dzw[p][q].at(e).at(c).at(u, v)

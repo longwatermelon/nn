@@ -92,14 +92,15 @@ impl Model {
                     } else {
                         d.adjust_nonparameter_dims(x.to_dense().cols())
                     }
-                }
+                },
                 Layer::Conv(c) => {
                     if include_parameters {
                         c.adjust_dims(bl, x.to_conv().shape().0)
                     } else {
                         c.adjust_nonparameter_dims(x.to_conv().shape().0)
                     }
-                }
+                },
+                Layer::Rnn(_) => todo!(),
             }
         }
     }
@@ -113,6 +114,7 @@ impl Model {
             match l {
                 Layer::Dense(d) => d.forward_prop(back, x),
                 Layer::Conv(c) => c.forward_prop(back, x),
+                Layer::Rnn(r) => r.forward_prop(back, x),
             };
         }
     }
@@ -136,6 +138,7 @@ impl Model {
             match l {
                 Layer::Dense(d) => deltas.insert(0, d.back_prop(back, f, y)),
                 Layer::Conv(c) => deltas.insert(0, c.back_prop(back, f, y)),
+                Layer::Rnn(r) => deltas.insert(0, r.back_prop(back, f, y)),
             };
         }
 
@@ -150,7 +153,8 @@ impl Model {
             Layer::Conv(c) => {
                 c.a = x.to_conv();
                 c.p = x.to_conv();
-            }
+            },
+            Layer::Rnn(_) => todo!(),
         }
     }
 
