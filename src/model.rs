@@ -20,15 +20,20 @@ impl Error {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Model {
-    layers: Vec<Layer>,
+pub enum Target {
+    Epochs(usize),
+    Cost(f32),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.msg)
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Model {
+    layers: Vec<Layer>,
 }
 
 impl Model {
@@ -44,23 +49,40 @@ impl Model {
         serde_json::from_str(data.as_str()).unwrap()
     }
 
-    pub fn train(&mut self, x: &Input, y: &Matrix, epochs: usize, a: f32, log_progress: bool) {
+    pub fn train(&mut self, x: &Input, y: &Matrix, target: Target, a: f32, print_interval: Option<usize>) {
         self.adjust_layer_dims(x, true);
 
-        for i in 0..epochs {
+        let mut epoch: usize = 0;
+        loop {
             self.forward_prop(x);
 
-            if log_progress && (i + 1) % 10 == 0 {
-                print!("\rIteration {} | Cost {:.10}", i + 1, self.cost(y));
-                std::io::stdout().flush().unwrap();
+            if let Some(interval) = print_interval {
+                if (epoch + 1) % interval == 0 {
+                    Model::print_iter(epoch, self.cost(y));
+                }
             }
 
             self.back_prop(y, a);
+
+            if match target {
+                Target::Epochs(n) => epoch >= n,
+                Target::Cost(c) => self.cost(y) <= c,
+            } {
+                Model::print_iter(epoch, self.cost(y));
+                break;
+            }
+
+            epoch += 1;
         }
 
-        if log_progress {
+        if print_interval.is_some() {
             println!();
         }
+    }
+
+    fn print_iter(epoch: usize, cost: f32) {
+        print!("\rIteration {} | Cost {:.10}", epoch + 1, cost);
+        std::io::stdout().flush().unwrap();
     }
 
     pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {
@@ -220,7 +242,7 @@ mod tests {
     #[test]
     fn train_and_predict() {
         let mut model: Model = get_model();
-        model.train(&get_x(), &get_y(), 1000, 0.5, false);
+        model.train(&get_x(), &get_y(), Target::Epochs(1000), 0.5, None);
 
         let prediction: f32 = model
             .predict(&Input::Dense(Matrix::from(vec![vec![0.], vec![1.]])))

@@ -1,6 +1,6 @@
 use nn::layers::{Activation, Layer};
 use nn::matrix::Matrix;
-use nn::model::{Input, Model};
+use nn::model::{Input, Model, Target};
 use nn::data;
 
 use image::{DynamicImage, GenericImageView};
@@ -31,11 +31,11 @@ fn main() {
             process_image(image::open("examples/data/digits/test1.png").unwrap());
 
         let pred0: f32 = model
-            .predict(&Input::Dense(data::images_flat(vec![example0])))
+            .predict(&Input::Dense(data::img::flat::one_dim(vec![example0])))
             .unwrap()[0];
 
         let pred1: f32 = model
-            .predict(&Input::Dense(data::images_flat(vec![example1])))
+            .predict(&Input::Dense(data::img::flat::one_dim(vec![example1])))
             .unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
@@ -60,7 +60,7 @@ fn main() {
             y.push(vec![1.]);
         }
 
-        let x: Input = Input::Dense(data::images_flat(images));
+        let x: Input = Input::Dense(data::img::flat::one_dim(images));
         let y: Matrix = data::labels(y);
 
         let mut model: Model = Model::new();
@@ -68,7 +68,7 @@ fn main() {
         model.push(Layer::dense(25, Activation::Sigmoid));
         model.push(Layer::dense(15, Activation::Sigmoid));
         model.push(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 5000, 1., true);
+        model.train(&x, &y, Target::Cost(0.001), 1., Some(100));
         model.save("examples/model/params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);

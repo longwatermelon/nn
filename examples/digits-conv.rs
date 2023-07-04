@@ -3,7 +3,7 @@ use nn::layers::{
     Activation, Layer,
 };
 use nn::matrix::{Matrix, Shape, Shape3};
-use nn::model::{Input, Model};
+use nn::model::{Input, Model, Target};
 use nn::data;
 
 use image::{DynamicImage, GenericImageView};
@@ -34,11 +34,11 @@ fn main() {
             process_image(image::open("examples/data/digits/test1.png").unwrap());
 
         let pred0: f32 = model
-            .predict(&Input::Conv(data::images_channels(vec![example0])))
+            .predict(&Input::Conv(data::img::shaped::three_dim(vec![example0])))
             .unwrap()[0];
 
         let pred1: f32 = model
-            .predict(&Input::Conv(data::images_channels(vec![example1])))
+            .predict(&Input::Conv(data::img::shaped::three_dim(vec![example1])))
             .unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
@@ -63,7 +63,7 @@ fn main() {
             y.push(vec![1.]);
         }
 
-        let x: Input = Input::Conv(data::images_channels(images));
+        let x: Input = Input::Conv(data::img::shaped::three_dim(images));
         let y: Matrix = data::labels(y);
 
         let mut model: Model = Model::new();
@@ -81,7 +81,7 @@ fn main() {
             Pooling::new(PoolType::Max, 2, 2),
         ));
         model.push(Layer::dense(1, Activation::Sigmoid));
-        model.train(&x, &y, 500, 0.03, true);
+        model.train(&x, &y, Target::Cost(0.0001), 0.05, Some(10));
         model.save("examples/model/params");
     } else {
         println!("Error: unrecognized subcommand '{}'", args[0]);
