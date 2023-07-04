@@ -26,8 +26,8 @@ pub mod img {
         pub fn three_dim(images: Vec<Shape3>) -> Shape4 {
             let shape: (usize, usize, usize) = images[0].shape();
             let mut res: Shape4 = Shape4::new(images.len(), shape.0, shape.1, shape.2);
-            for e in 0..images.len() {
-                *res.at_mut(e) = images[e].clone();
+            for (e, img) in images.iter().enumerate() {
+                *res.at_mut(e) = img.clone();
             }
 
             res
