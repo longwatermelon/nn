@@ -5,20 +5,26 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Rnn {
     na: usize,
+    nx: usize,
     wax: Matrix,
     waa: Matrix,
     ba: Vec<f32>,
     by: Vec<f32>,
+    pub(crate) a: Matrix,
+    x: Matrix,
 }
 
 impl Rnn {
     pub fn new(n: usize) -> Self {
         Self {
             na: n,
+            nx: 0,
             wax: Matrix::default(),
             waa: Matrix::default(),
             ba: Vec::new(),
             by: Vec::new(),
+            a: Matrix::default(),
+            x: Matrix::default(),
         }
     }
 
