@@ -1,6 +1,7 @@
 use nn::layers::{Activation, Layer};
 use nn::matrix::Matrix;
 use nn::model::{Input, Model};
+use nn::data;
 
 use image::{DynamicImage, GenericImageView};
 
@@ -30,17 +31,17 @@ fn main() {
             process_image(image::open("examples/data/digits/test1.png").unwrap());
 
         let pred0: f32 = model
-            .predict(&Input::Dense(Matrix::from(vec![example0]).transpose()))
+            .predict(&Input::Dense(data::images_flat(vec![example0])))
             .unwrap()[0];
 
         let pred1: f32 = model
-            .predict(&Input::Dense(Matrix::from(vec![example1]).transpose()))
+            .predict(&Input::Dense(data::images_flat(vec![example1])))
             .unwrap()[0];
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
         println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
     } else if args[0] == "train" {
-        let mut y: Matrix = Matrix::new(1, 20);
+        let mut y: Vec<Vec<f32>> = Vec::new();
 
         let mut images: Vec<Vec<f32>> = Vec::new();
         for i in 0..10 {
@@ -48,7 +49,7 @@ fn main() {
                 image::open(format!("examples/data/digits/{}0.png", i)).unwrap(),
             ));
 
-            *y.atref(0, i) = 0.;
+            y.push(vec![0.]);
         }
 
         for i in 0..10 {
@@ -56,10 +57,11 @@ fn main() {
                 image::open(format!("examples/data/digits/{}1.png", i)).unwrap(),
             ));
 
-            *y.atref(0, i + 10) = 1.;
+            y.push(vec![1.]);
         }
 
-        let x: Input = Input::Dense(Matrix::from(images).transpose());
+        let x: Input = Input::Dense(data::images_flat(images));
+        let y: Matrix = data::labels(y);
 
         let mut model: Model = Model::new();
         model.push(Layer::input(&x));
@@ -73,3 +75,4 @@ fn main() {
         std::process::exit(1);
     }
 }
+

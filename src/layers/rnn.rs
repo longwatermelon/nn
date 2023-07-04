@@ -1,3 +1,6 @@
+// Temporary
+#![allow(unused)]
+
 use crate::layers::{Layer, Delta, Input, Prop};
 use crate::matrix::Matrix;
 use serde::{Serialize, Deserialize};

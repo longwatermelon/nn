@@ -287,6 +287,14 @@ impl Shape3 {
             data: vec![Matrix::new(rows, cols); channels],
         }
     }
+
+    pub fn shape(&self) -> (usize, usize, usize) {
+        (
+            self.data.len(),
+            self.data[0].rows(),
+            self.data[0].cols(),
+        )
+    }
 }
 
 impl Shape for Shape3 {
