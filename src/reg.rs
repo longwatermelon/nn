@@ -13,6 +13,7 @@ impl DataPoint {
     }
 }
 
+/// Gradient descent
 pub fn gdescent(w: &mut [f32], b: &mut f32, a: f32, x: &[DataPoint],
                 //         w       x       b       y
                 f: impl Fn(&[f32], &[f32], f32) -> f32)
