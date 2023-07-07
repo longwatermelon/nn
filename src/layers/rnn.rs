@@ -16,7 +16,7 @@ pub struct Rnn {
     wya: Matrix,
     ba: Vec<f32>,
     by: Vec<f32>,
-    pub(crate) a: Matrix,
+    pub(crate) a: Shape3,
     x: Shape3,
     y: Shape3,
 }
@@ -32,7 +32,7 @@ impl Rnn {
             wya: Matrix::default(),
             ba: Vec::new(),
             by: Vec::new(),
-            a: Matrix::default(),
+            a: Shape3::default(),
             x: Shape3::default(),
             y: Shape3::default(),
         }
@@ -55,6 +55,7 @@ impl Rnn {
         self.ny = ny;
         self.x = Shape3::new(nx, m, tx);
         self.y = Shape3::new(ny, m, tx);
+        self.a = Shape3::new(self.na, m, tx);
     }
 
     fn cell_forward(&mut self, x: Shape3, prev_a: Matrix, t: usize) {
@@ -74,21 +75,46 @@ impl Rnn {
 
         // a = waa * a<l-1> + wax * x<t>
         // a dims = n_a x m
-        self.a = self.waa.clone() * prev_a + self.wax.clone() * xt;
+
+        let prod: Matrix = self.waa.clone() * prev_a + self.wax.clone() * xt;
+        for n in 0..self.a.shape().0 {
+            for e in 0..self.a.shape().1 {
+                *self.a.at_mut(n).atref(e, t) = prod.at(n, e);
+            }
+        }
+        // self.a = ;
+
         // a = a + b
         // 0 to m
-        for c in 0..self.a.cols() {
-            // 0 to n_a
-            for r in 0..self.a.rows() {
-                *self.a.atref(r, c) += self.ba[r];
+        for e in 0..self.a.shape().1 {
+            for n in 0..self.a.shape().0 {
+                *self.a.at_mut(n).atref(e, t) += self.ba[n];
+            }
+        }
+        // for c in 0..self.a.cols() {
+        //     // 0 to n_a
+        //     for r in 0..self.a.rows() {
+        //         *self.a.atref(r, c) += self.ba[r];
+        //     }
+        // }
+
+        // a = tanh(a)
+        for n in 0..self.a.shape().0 {
+            for e in 0..self.a.shape().1 {
+                *self.a.at_mut(n).atref(e, t) = f32::tanh(self.a.at(n).at(e, t));
+            }
+        }
+        // self.a = self.a.foreach(|r, c| f32::tanh(self.a.at(r, c)));
+
+        let mut at: Matrix = Matrix::new(self.a.shape().0, self.a.shape().1);
+        for n in 0..at.rows() {
+            for e in 0..at.cols() {
+                *at.atref(n, e) = self.a.at(n).at(e, t);
             }
         }
 
-        // a = tanh(a)
-        self.a = self.a.foreach(|r, c| f32::tanh(self.a.at(r, c)));
-
         // y<t> = wya * a<t>
-        let prod: Matrix = self.wya.clone() * self.a.clone();
+        let prod: Matrix = self.wya.clone() * at;
         for n in 0..self.y.shape().0 {
             for e in 0..self.y.shape().1 {
                 *self.y.at_mut(n).atref(e, t) = prod.at(n, e);
@@ -218,7 +244,13 @@ mod tests {
         l.prepare_nonparam(3, 2, 10, 1);
         l.cell_forward(x, prev_a, 0);
 
-        assert_eq!(l.a.extract_row(4), vec![0.59584534, 0.18141817, 0.61311865, 0.99808216, 0.850162, 0.9998098, -0.1888717, 0.99815553, 0.65311515, 0.8287204]);
+        let mut at: Matrix = Matrix::new(l.a.shape().0, l.a.shape().1);
+        for n in 0..l.a.shape().0 {
+            for e in 0..l.a.shape().1 {
+                *at.atref(n, e) = l.a.at(n).at(e, 0);
+            }
+        }
+        assert_eq!(at.extract_row(4), vec![0.59584534, 0.18141817, 0.61311865, 0.99808216, 0.850162, 0.9998098, -0.1888717, 0.99815553, 0.65311515, 0.8287204]);
 
         let mut yt: Matrix = Matrix::new(l.y.shape().0, l.y.shape().1);
         for n in 0..l.y.shape().0 {
