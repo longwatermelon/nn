@@ -1,4 +1,7 @@
-use crate::layers::{Layer, Delta, Input, Prop, Activation};
+// Temporary
+#![allow(unused)]
+
+use crate::layers::{Layer, Delta, Input, Prop};
 use crate::matrix::Matrix;
 use crate::util;
 use serde::{Serialize, Deserialize};
@@ -33,7 +36,7 @@ impl Rnn {
         }
     }
 
-    pub fn adjust_dims(&mut self, ny: usize, m: usize) {
+    pub fn adjust_dims(&mut self, ny: usize) {
         self.wax = Matrix::new(self.na, self.nx);
         self.waa = Matrix::new(self.na, self.na);
         self.wya = Matrix::new(ny, self.na);
@@ -85,6 +88,7 @@ impl Rnn {
 
 impl Prop for Rnn {
     fn forward_prop(&mut self, back: &Layer, x: &Input) {
+        todo!()
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
