@@ -75,14 +75,12 @@ impl Rnn {
 
         // a = waa * a<l-1> + wax * x<t>
         // a dims = n_a x m
-
         let prod: Matrix = self.waa.clone() * prev_a + self.wax.clone() * xt;
         for n in 0..self.a.shape().0 {
             for e in 0..self.a.shape().1 {
                 *self.a.at_mut(n).atref(e, t) = prod.at(n, e);
             }
         }
-        // self.a = ;
 
         // a = a + b
         // 0 to m
@@ -91,12 +89,6 @@ impl Rnn {
                 *self.a.at_mut(n).atref(e, t) += self.ba[n];
             }
         }
-        // for c in 0..self.a.cols() {
-        //     // 0 to n_a
-        //     for r in 0..self.a.rows() {
-        //         *self.a.atref(r, c) += self.ba[r];
-        //     }
-        // }
 
         // a = tanh(a)
         for n in 0..self.a.shape().0 {
@@ -104,7 +96,6 @@ impl Rnn {
                 *self.a.at_mut(n).atref(e, t) = f32::tanh(self.a.at(n).at(e, t));
             }
         }
-        // self.a = self.a.foreach(|r, c| f32::tanh(self.a.at(r, c)));
 
         let mut at: Matrix = Matrix::new(self.a.shape().0, self.a.shape().1);
         for n in 0..at.rows() {
