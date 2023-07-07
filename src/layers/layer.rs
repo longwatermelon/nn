@@ -4,7 +4,7 @@ use super::{
     rnn::Rnn,
     pool::{PoolType, Pooling},
 };
-use crate::matrix::{Matrix, Shape, Shape4};
+use crate::matrix::{Matrix, Shape, Shape4, Shape3};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub enum Delta {
 pub enum Input {
     Dense(Matrix),
     Conv(Shape4),
-    Rnn(Matrix),
+    Rnn(Shape3),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -73,7 +73,6 @@ impl Input {
     pub fn to_dense(&self) -> Matrix {
         match self {
             Input::Dense(a) => a.clone(),
-            Input::Rnn(a) => a.clone(),
             Input::Conv(a) => {
                 let f: Vec<f32> = a.flatten();
                 let mut m: Matrix = Matrix::new(f.len() / a.shape().0, a.shape().0);
@@ -87,16 +86,21 @@ impl Input {
 
                 m
             },
+            Input::Rnn(_) => todo!(),
         }
     }
 
-    /// Panics if self is not conv.
     pub fn to_conv(&self) -> Shape4 {
         if let Input::Conv(c) = self {
             c.clone()
         } else {
             panic!("Dense -> Conv is unsupported.")
         }
+    }
+
+    pub fn to_rnn(&self) -> Shape3 {
+        let Input::Rnn(a) = self else { panic!("to_rnn called on non-rnn Input.") };
+        a.clone()
     }
 }
 
@@ -122,7 +126,7 @@ impl Layer {
                 Activation::Linear,
                 Pooling::new(PoolType::Max, 1, 1),
             ),
-            Input::Rnn(a) => Layer::rnn(a.rows()),
+            Input::Rnn(a) => Layer::rnn(a.shape().0),
         }
     }
 
