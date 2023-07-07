@@ -18,7 +18,6 @@ INPUT /usr/share/texmf-dist/tex/latex/base/size12.clo
 INPUT /usr/share/texmf-dist/tex/latex/base/size12.clo
 INPUT /usr/share/texmf-dist/tex/latex/base/size12.clo
 INPUT /usr/share/texmf-dist/tex/latex/base/size12.clo
-INPUT /usr/share/texmf-dist/fonts/map/fontname/texfonts.map
 INPUT /usr/share/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
 INPUT /usr/share/texmf-dist/tex/latex/amsmath/amsmath.sty
 INPUT /usr/share/texmf-dist/tex/latex/amsmath/amsmath.sty
@@ -994,6 +993,11 @@ INPUT ./images/rnn.png
 INPUT images/rnn.png
 INPUT ./images/rnn.png
 INPUT ./images/rnn.png
+INPUT ./images/rnn-cell-forward.png
+INPUT ./images/rnn-cell-forward.png
+INPUT images/rnn-cell-forward.png
+INPUT ./images/rnn-cell-forward.png
+INPUT ./images/rnn-cell-forward.png
 INPUT ./images/rnn-variants.png
 INPUT ./images/rnn-variants.png
 INPUT images/rnn-variants.png

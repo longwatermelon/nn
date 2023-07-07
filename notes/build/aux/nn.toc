@@ -35,5 +35,5 @@
 \contentsline {subsection}{\numberline {3.1}Notation}{10}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Structure}{11}{subsection.3.2}%
 \contentsline {subsection}{\numberline {3.3}Forward prop}{11}{subsection.3.3}%
-\contentsline {subsection}{\numberline {3.4}Back prop}{11}{subsection.3.4}%
-\contentsline {subsection}{\numberline {3.5}RNN variants}{11}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.4}Back prop}{12}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}RNN variants}{12}{subsection.3.5}%
