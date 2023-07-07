@@ -2,7 +2,7 @@
 #![allow(unused)]
 
 use crate::layers::{Layer, Delta, Input, Prop};
-use crate::matrix::Matrix;
+use crate::matrix::{Matrix, Shape3, Shape};
 use crate::util;
 use serde::{Serialize, Deserialize};
 
@@ -10,14 +10,15 @@ use serde::{Serialize, Deserialize};
 pub struct Rnn {
     na: usize,
     nx: usize,
+    ny: usize,
     wax: Matrix,
     waa: Matrix,
     wya: Matrix,
     ba: Vec<f32>,
     by: Vec<f32>,
     pub(crate) a: Matrix,
-    xt: Matrix,
-    yt: Matrix,
+    x: Shape3,
+    y: Shape3,
 }
 
 impl Rnn {
@@ -25,14 +26,15 @@ impl Rnn {
         Self {
             na: n,
             nx: 0,
+            ny: 0,
             wax: Matrix::default(),
             waa: Matrix::default(),
             wya: Matrix::default(),
             ba: Vec::new(),
             by: Vec::new(),
             a: Matrix::default(),
-            xt: Matrix::default(),
-            yt: Matrix::default(),
+            x: Shape3::default(),
+            y: Shape3::default(),
         }
     }
 
@@ -48,12 +50,31 @@ impl Rnn {
         self.by = vec![0.; ny];
     }
 
-    fn cell_forward(&mut self, xt: Matrix, prev_a: Matrix) {
-        self.xt = xt;
+    pub fn prepare_nonparam(&mut self, nx: usize, ny: usize, m: usize, tx: usize) {
+        self.nx = nx;
+        self.ny = ny;
+        self.x = Shape3::new(nx, m, tx);
+        self.y = Shape3::new(ny, m, tx);
+    }
+
+    fn cell_forward(&mut self, x: Shape3, prev_a: Matrix, t: usize) {
+        // Constant is x.shape().2 or t
+        let mut xt: Matrix = Matrix::new(x.shape().0, x.shape().1);
+        for n in 0..xt.rows() {
+            for e in 0..xt.cols() {
+                *xt.atref(n, e) = x.at(n).at(e, t);
+            }
+        }
+
+        for n in 0..self.x.shape().0 {
+            for e in 0..self.x.shape().1 {
+                *self.x.at_mut(n).atref(e, t) = xt.at(n, e);
+            }
+        }
 
         // a = waa * a<l-1> + wax * x<t>
         // a dims = n_a x m
-        self.a = self.waa.clone() * prev_a + self.wax.clone() * self.xt.clone();
+        self.a = self.waa.clone() * prev_a + self.wax.clone() * xt;
         // a = a + b
         // 0 to m
         for c in 0..self.a.cols() {
@@ -67,20 +88,32 @@ impl Rnn {
         self.a = self.a.foreach(|r, c| f32::tanh(self.a.at(r, c)));
 
         // y<t> = wya * a<t>
-        self.yt = self.wya.clone() * self.a.clone();
-        // y<t> = y<t> + by
-        for c in 0..self.yt.cols() {
-            for r in 0..self.yt.rows() {
-                *self.yt.atref(r, c) += self.by[r];
+        let prod: Matrix = self.wya.clone() * self.a.clone();
+        for n in 0..self.y.shape().0 {
+            for e in 0..self.y.shape().1 {
+                *self.y.at_mut(n).atref(e, t) = prod.at(n, e);
+            }
+        }
+
+        // Iter over examples
+        for e in 0..self.y.shape().1 {
+            // Add by[n] where n = 0..ny for each ex
+            for n in 0..self.y.shape().0 {
+                *self.y.at_mut(n).atref(e, t) += self.by[n];
             }
         }
 
         // y<t> = softmax(y<t>)
-        for c in 0..self.yt.cols() {
-            let y: Vec<f32> = util::softmax(&self.yt.extract_col(c));
+        for e in 0..self.y.shape().1 {
+            let mut y: Vec<f32> = vec![0.; self.ny];
+            for n in 0..self.ny {
+                y[n] = self.y.at(n).at(e, t);
+            }
 
-            for r in 0..self.yt.rows() {
-                *self.yt.atref(r, c) = y[r];
+            let softmax_y: Vec<f32> = util::softmax(&y);
+
+            for n in 0..self.y.shape().0 {
+                *self.y.at_mut(n).atref(e, t) = softmax_y[n];
             }
         }
     }
@@ -147,11 +180,20 @@ mod tests {
             0.52057634
         ];
 
-        let xt: Matrix = Matrix::from(
+        // let xt: Matrix = Matrix::from(
+        //     vec![
+        //         vec![1.6243453636632417, -0.6117564136500754, -0.5281717522634557, -1.0729686221561705, 0.8654076293246785, -2.3015386968802827, 1.74481176421648, -0.7612069008951028, 0.31903909605709857, -0.2493703754774101],
+        //         vec![1.462107937044974, -2.060140709497654, -0.3224172040135075, -0.38405435466841564, 1.1337694423354374, -1.0998912673140309, -0.17242820755043575, -0.8778584179213718, 0.04221374671559283, 0.5828152137158222],
+        //         vec![-1.1006191772129212, 1.1447237098396141, 0.9015907205927955, 0.5024943389018682, 0.9008559492644118, -0.6837278591743331, -0.12289022551864817, -0.9357694342590688, -0.2678880796260159, 0.530355466738186],
+        //     ]
+        // );
+
+        // x is (nx, m, tx) = (3, 10, 1)
+        let x: Shape3 = Shape3::from(
             vec![
-                vec![1.6243453636632417, -0.6117564136500754, -0.5281717522634557, -1.0729686221561705, 0.8654076293246785, -2.3015386968802827, 1.74481176421648, -0.7612069008951028, 0.31903909605709857, -0.2493703754774101],
-                vec![1.462107937044974, -2.060140709497654, -0.3224172040135075, -0.38405435466841564, 1.1337694423354374, -1.0998912673140309, -0.17242820755043575, -0.8778584179213718, 0.04221374671559283, 0.5828152137158222],
-                vec![-1.1006191772129212, 1.1447237098396141, 0.9015907205927955, 0.5024943389018682, 0.9008559492644118, -0.6837278591743331, -0.12289022551864817, -0.9357694342590688, -0.2678880796260159, 0.530355466738186],
+                Matrix::from(vec![vec![1.6243453636632417], vec![ -0.6117564136500754], vec![ -0.5281717522634557], vec![ -1.0729686221561705], vec![ 0.8654076293246785], vec![ -2.3015386968802827], vec![ 1.74481176421648], vec![ -0.7612069008951028], vec![ 0.31903909605709857], vec![ -0.2493703754774101]]),
+                Matrix::from(vec![vec![1.462107937044974], vec![ -2.060140709497654], vec![ -0.3224172040135075], vec![ -0.38405435466841564], vec![ 1.1337694423354374], vec![ -1.0998912673140309], vec![ -0.17242820755043575], vec![ -0.8778584179213718], vec![ 0.04221374671559283], vec![ 0.5828152137158222]]),
+                Matrix::from(vec![vec![-1.1006191772129212], vec![ 1.1447237098396141], vec![ 0.9015907205927955], vec![ 0.5024943389018682], vec![ 0.9008559492644118], vec![ -0.6837278591743331], vec![ -0.12289022551864817], vec![ -0.9357694342590688], vec![ -0.2678880796260159], vec![ 0.530355466738186]]),
             ]
         );
 
@@ -173,10 +215,18 @@ mod tests {
         // println!("xt = {}", xt.dims());
         // println!("prev_a = {}", prev_a.dims());
 
-        l.cell_forward(xt, prev_a);
+        l.prepare_nonparam(3, 2, 10, 1);
+        l.cell_forward(x, prev_a, 0);
 
         assert_eq!(l.a.extract_row(4), vec![0.59584534, 0.18141817, 0.61311865, 0.99808216, 0.850162, 0.9998098, -0.1888717, 0.99815553, 0.65311515, 0.8287204]);
-        assert_eq!(l.yt.extract_row(1), vec![0.988816, 0.016820231, 0.21140899, 0.36817473, 0.98988384, 0.88945216, 0.36920208, 0.9966312, 0.99825585, 0.17746533]);
+
+        let mut yt: Matrix = Matrix::new(l.y.shape().0, l.y.shape().1);
+        for n in 0..l.y.shape().0 {
+            for e in 0..l.y.shape().1 {
+                *yt.atref(n, e) = l.y.at(n).at(e, 0);
+            }
+        }
+        assert_eq!(yt.extract_row(1), vec![0.988816, 0.016820231, 0.21140899, 0.36817473, 0.98988384, 0.88945216, 0.36920208, 0.9966312, 0.99825585, 0.17746533]);
     }
 }
 
