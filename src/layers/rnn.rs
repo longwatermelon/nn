@@ -1,6 +1,5 @@
 use crate::layers::{Layer, Delta, Input, Prop};
 use crate::matrix::{Matrix, Shape3, Shape};
-use crate::util;
 use serde::{Serialize, Deserialize};
 
 /// Uses tanh activation.
@@ -8,15 +7,11 @@ use serde::{Serialize, Deserialize};
 pub struct Rnn {
     na: usize,
     nx: usize,
-    ny: usize,
     wax: Matrix,
     waa: Matrix,
-    wya: Matrix,
     ba: Vec<f32>,
-    by: Vec<f32>,
     pub(crate) a: Shape3,
     x: Shape3,
-    y: Shape3,
     a0: Matrix,
 }
 
@@ -25,36 +20,27 @@ impl Rnn {
         Self {
             na: n,
             nx: 0,
-            ny: 0,
             wax: Matrix::default(),
             waa: Matrix::default(),
-            wya: Matrix::default(),
             ba: Vec::new(),
-            by: Vec::new(),
             a: Shape3::default(),
             x: Shape3::default(),
-            y: Shape3::default(),
             a0: Matrix::default(),
         }
     }
 
-    pub fn adjust_dims(&mut self, ny: usize) {
+    pub fn adjust_dims(&mut self) {
         self.wax = Matrix::new(self.na, self.nx);
         self.waa = Matrix::new(self.na, self.na);
-        self.wya = Matrix::new(ny, self.na);
         self.wax.random_init(-1., 1.);
         self.waa.random_init(-1., 1.);
-        self.wya.random_init(-1., 1.);
 
         self.ba = vec![0.; self.na];
-        self.by = vec![0.; ny];
     }
 
-    pub fn prepare_nonparam(&mut self, nx: usize, ny: usize, m: usize, tx: usize) {
+    pub fn prepare_nonparam(&mut self, nx: usize, m: usize, tx: usize) {
         self.nx = nx;
-        self.ny = ny;
         self.x = Shape3::new(nx, m, tx);
-        self.y = Shape3::new(ny, m, tx);
         self.a = Shape3::new(self.na, m, tx);
     }
 
@@ -77,34 +63,6 @@ impl Rnn {
 
         // a<t> = tanh(a<t>)
         self.a.foreach_t(t, f32::tanh);
-
-        let at: Matrix = self.a.index_last(t);
-
-        // y<t> = wya * a<t>
-        let prod: Matrix = self.wya.clone() * at;
-        self.y.assign_last(t, &prod);
-
-        // Iter over examples
-        for e in 0..self.y.shape().1 {
-            // Add by[n] where n = 0..ny for each ex
-            for n in 0..self.y.shape().0 {
-                *self.y.at_mut(n).atref(e, t) += self.by[n];
-            }
-        }
-
-        // y<t> = softmax(y<t>)
-        for e in 0..self.y.shape().1 {
-            let mut y: Vec<f32> = vec![0.; self.ny];
-            for n in 0..self.ny {
-                y[n] = self.y.at(n).at(e, t);
-            }
-
-            let softmax_y: Vec<f32> = util::softmax(&y);
-
-            for n in 0..self.y.shape().0 {
-                *self.y.at_mut(n).atref(e, t) = softmax_y[n];
-            }
-        }
     }
 
     /// Returns da_front for the next cell_back call
@@ -211,13 +169,6 @@ mod tests {
             ]
         );
 
-        l.wya = Matrix::from(
-            vec![
-                vec![-0.02461696, -0.77516162,  1.27375593,  1.96710175, -1.85798186],
-                vec![ 1.23616403,  1.62765075,  0.3380117 , -1.19926803,  0.86334532],
-            ]
-        );
-
         l.ba = vec![
             -0.1809203,
             -0.60392063,
@@ -225,19 +176,6 @@ mod tests {
             0.5505375,
             0.79280687,
         ];
-
-        l.by = vec![
-            -0.62353073,
-            0.52057634
-        ];
-
-        // let xt: Matrix = Matrix::from(
-        //     vec![
-        //         vec![1.6243453636632417, -0.6117564136500754, -0.5281717522634557, -1.0729686221561705, 0.8654076293246785, -2.3015386968802827, 1.74481176421648, -0.7612069008951028, 0.31903909605709857, -0.2493703754774101],
-        //         vec![1.462107937044974, -2.060140709497654, -0.3224172040135075, -0.38405435466841564, 1.1337694423354374, -1.0998912673140309, -0.17242820755043575, -0.8778584179213718, 0.04221374671559283, 0.5828152137158222],
-        //         vec![-1.1006191772129212, 1.1447237098396141, 0.9015907205927955, 0.5024943389018682, 0.9008559492644118, -0.6837278591743331, -0.12289022551864817, -0.9357694342590688, -0.2678880796260159, 0.530355466738186],
-        //     ]
-        // );
 
         // x is (nx, m, tx) = (3, 10, 1)
         let x: Shape3 = Shape3::from(
@@ -258,15 +196,7 @@ mod tests {
             ]
         );
 
-        // println!("waa = {}", l.waa.dims());
-        // println!("wya = {}", l.wya.dims());
-        // println!("wax = {}", l.wax.dims());
-        // println!("ba = {}", l.ba.len());
-        // println!("by = {}", l.by.len());
-        // println!("xt = {}", xt.dims());
-        // println!("prev_a = {}", prev_a.dims());
-
-        l.prepare_nonparam(3, 2, 10, 1);
+        l.prepare_nonparam(3, 10, 1);
         l.cell_forward(&x, &prev_a, 0);
 
         let mut at: Matrix = Matrix::new(l.a.shape().0, l.a.shape().1);
@@ -276,24 +206,15 @@ mod tests {
             }
         }
         assert_eq!(at.extract_row(4), vec![0.59584534, 0.18141817, 0.61311865, 0.99808216, 0.850162, 0.9998098, -0.1888717, 0.99815553, 0.65311515, 0.8287204]);
-
-        let mut yt: Matrix = Matrix::new(l.y.shape().0, l.y.shape().1);
-        for n in 0..l.y.shape().0 {
-            for e in 0..l.y.shape().1 {
-                *yt.atref(n, e) = l.y.at(n).at(e, 0);
-            }
-        }
-        assert_eq!(yt.extract_row(1), vec![0.988816, 0.016820231, 0.21140899, 0.36817473, 0.98988384, 0.88945216, 0.36920208, 0.9966312, 0.99825585, 0.17746533]);
     }
 
     #[test]
     fn forward_prop() {
         let nx: usize = 3;
-        // let na: usize = 5;
-        let ny: usize = 2;
+        let na: usize = 5;
         let m: usize = 10;
 
-        let mut l: Rnn = Rnn::new(5);
+        let mut l: Rnn = Rnn::new(na);
 
         l.waa = Matrix::from(
             vec![
@@ -315,15 +236,7 @@ mod tests {
             ]
         );
 
-        l.wya = Matrix::from(
-            vec![
-                vec![-0.3264995 , -1.34267579,  1.11438298, -0.58652394, -1.23685338],
-                vec![ 0.87583893,  0.62336218, -0.43495668,  1.40754   ,  0.12910158],
-            ]
-        );
-
         l.ba = vec![ 1.6169496, 0.50274088, 1.55880554, 0.1094027 , -1.2197444 ];
-        l.by = vec![2.44936865, -0.54577417];
 
         let x: Shape3 = Shape3::from(
             vec![
@@ -465,7 +378,7 @@ mod tests {
 
         let tmp: Rnn = Rnn::new(1);
         // l.adjust_dims(ny);
-        l.prepare_nonparam(nx, ny, m, 4);
+        l.prepare_nonparam(nx, m, 4);
         l.forward_prop(&Layer::Rnn(tmp), &Input::Rnn(x));
 
         let mut ane: Vec<f32> = vec![0.; 4];
@@ -474,20 +387,12 @@ mod tests {
         }
 
         assert_eq!(ane, vec![-0.99999375,  0.77911205, -0.99861469, -0.99833267]);
-
-        let mut yne: Vec<f32> = vec![0.; 4];
-        for t in 0..4 {
-            yne[t] = l.y.at(1).at(3, t);
-        }
-
-        assert_eq!(yne, vec![0.7956037, 0.86224866, 0.11118256, 0.81515944]);
     }
 
     #[test]
     fn back_cell() {
         let nx: usize = 3;
         let na: usize = 5;
-        let ny: usize = 2;
         let m: usize = 10;
         let tx: usize = 1;
 
@@ -513,15 +418,7 @@ mod tests {
             ]
         );
 
-        l.wya = Matrix::from(
-            vec![
-                vec![-0.02461696, -0.77516162,  1.27375593,  1.96710175, -1.85798186],
-                vec![ 1.23616403,  1.62765075,  0.3380117 , -1.19926803,  0.86334532]
-            ]
-        );
-
         l.ba = vec![-0.1809203, -0.60392063, -1.23005814, 0.5505375, 0.79280687];
-        l.by = vec![-0.62353073, 0.52057634];
 
         let x: Shape3 = Shape3::from(
             vec![
@@ -541,7 +438,7 @@ mod tests {
             ]
         );
 
-        l.prepare_nonparam(nx, ny, m, tx);
+        l.prepare_nonparam(nx, m, tx);
         l.cell_forward(&x, &prev_a, 0);
 
         let da_next: Matrix = Matrix::from(
