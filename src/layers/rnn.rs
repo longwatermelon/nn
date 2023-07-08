@@ -1,11 +1,10 @@
-// Temporary
-#![allow(unused)]
-
 use crate::layers::{Layer, Delta, Input, Prop};
 use crate::matrix::{Matrix, Shape3, Shape};
 use crate::util;
 use serde::{Serialize, Deserialize};
 
+/// Uses tanh activation.
+/// Y predictions are fed through softmax.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Rnn {
     na: usize,
@@ -139,7 +138,7 @@ impl Rnn {
 }
 
 impl Prop for Rnn {
-    fn forward_prop(&mut self, back: &Layer, x: &Input) {
+    fn forward_prop(&mut self, _back: &Layer, x: &Input) {
         let x: Shape3 = x.to_rnn();
         // let mut prev_a: Matrix = Matrix::new(self.na, self.a.shape().1);
         let mut prev_a: Matrix = self.a0.clone();
@@ -154,11 +153,11 @@ impl Prop for Rnn {
         }
     }
 
-    fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
+    fn back_prop(&mut self, _back: &Layer, _front: Option<&Layer>, _y: &Matrix) -> Delta {
         todo!()
     }
 
-    fn apply_delta(&mut self, delta: &Delta, a: f32) {
+    fn apply_delta(&mut self, _delta: &Delta, _a: f32) {
         todo!()
     }
 }
@@ -268,7 +267,7 @@ mod tests {
     #[test]
     fn forward_prop() {
         let nx: usize = 3;
-        let na: usize = 5;
+        // let na: usize = 5;
         let ny: usize = 2;
         let m: usize = 10;
 
