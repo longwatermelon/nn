@@ -295,6 +295,33 @@ impl Shape3 {
             self.data[0].cols(),
         )
     }
+
+    pub fn index_last(&self, t: usize) -> Matrix {
+        let mut res: Matrix = Matrix::new(self.shape().0, self.shape().1);
+        for r in 0..res.rows() {
+            for c in 0..res.cols() {
+                *res.atref(r, c) = self.at(r).at(c, t);
+            }
+        }
+
+        res
+    }
+
+    pub fn assign_last(&mut self, t: usize, value: &Matrix) {
+        for i in 0..self.shape().0 {
+            for j in 0..self.shape().1 {
+                *self.at_mut(i).atref(j, t) = value.at(i, j);
+            }
+        }
+    }
+
+    pub fn foreach_t(&mut self, t: usize, f: impl Fn(f32) -> f32) {
+        for i in 0..self.shape().0 {
+            for j in 0..self.shape().1 {
+                *self.at_mut(i).atref(j, t) = f(self.at(i).at(j, t));
+            }
+        }
+    }
 }
 
 impl Shape for Shape3 {

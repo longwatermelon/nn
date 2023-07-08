@@ -60,28 +60,13 @@ impl Rnn {
     }
 
     fn cell_forward(&mut self, x: &Shape3, prev_a: &Matrix, t: usize) {
-        // Constant is x.shape().2 or t
-        let mut xt: Matrix = Matrix::new(x.shape().0, x.shape().1);
-        for n in 0..xt.rows() {
-            for e in 0..xt.cols() {
-                *xt.atref(n, e) = x.at(n).at(e, t);
-            }
-        }
-
-        for n in 0..self.x.shape().0 {
-            for e in 0..self.x.shape().1 {
-                *self.x.at_mut(n).atref(e, t) = xt.at(n, e);
-            }
-        }
+        let xt: Matrix = x.index_last(t);
+        self.x.assign_last(t, &xt);
 
         // a = waa * a<l-1> + wax * x<t>
         // a dims = n_a x m
         let prod: Matrix = self.waa.clone() * prev_a.clone() + self.wax.clone() * xt;
-        for n in 0..self.a.shape().0 {
-            for e in 0..self.a.shape().1 {
-                *self.a.at_mut(n).atref(e, t) = prod.at(n, e);
-            }
-        }
+        self.a.assign_last(t, &prod);
 
         // a = a + b
         // 0 to m
@@ -91,27 +76,14 @@ impl Rnn {
             }
         }
 
-        // a = tanh(a)
-        for n in 0..self.a.shape().0 {
-            for e in 0..self.a.shape().1 {
-                *self.a.at_mut(n).atref(e, t) = f32::tanh(self.a.at(n).at(e, t));
-            }
-        }
+        // a<t> = tanh(a<t>)
+        self.a.foreach_t(t, f32::tanh);
 
-        let mut at: Matrix = Matrix::new(self.a.shape().0, self.a.shape().1);
-        for n in 0..at.rows() {
-            for e in 0..at.cols() {
-                *at.atref(n, e) = self.a.at(n).at(e, t);
-            }
-        }
+        let at: Matrix = self.a.index_last(t);
 
         // y<t> = wya * a<t>
         let prod: Matrix = self.wya.clone() * at;
-        for n in 0..self.y.shape().0 {
-            for e in 0..self.y.shape().1 {
-                *self.y.at_mut(n).atref(e, t) = prod.at(n, e);
-            }
-        }
+        self.y.assign_last(t, &prod);
 
         // Iter over examples
         for e in 0..self.y.shape().1 {
@@ -134,6 +106,10 @@ impl Rnn {
                 *self.y.at_mut(n).atref(e, t) = softmax_y[n];
             }
         }
+    }
+
+    fn cell_back(&mut self, da_front: Matrix, t: usize) {
+        todo!()
     }
 }
 
