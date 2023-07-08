@@ -17,8 +17,19 @@ pub enum Activation {
 
 #[derive(Debug)]
 pub enum Delta {
-    Dense { dw: Matrix, db: Vec<f32> },
-    Conv { dw: Shape4, db: Vec<f32> },
+    Dense {
+        dw: Matrix,
+        db: Vec<f32>
+    },
+    Conv {
+        dw: Shape4,
+        db: Vec<f32>
+    },
+    Rnn {
+        dwax: Matrix,
+        dwaa: Matrix,
+        dba: Vec<f32>
+    },
 }
 
 #[derive(Clone)]
