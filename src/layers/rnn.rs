@@ -107,7 +107,8 @@ impl Rnn {
         }
     }
 
-    fn cell_back(&mut self, da_front: Matrix, t: usize, delta: &mut Delta) {
+    /// Returns da_front for the next cell_back call
+    fn cell_back(&mut self, da_front: Matrix, t: usize, delta: &mut Delta) -> Matrix {
         let a_prev: Matrix = if t == 0 { self.a0.clone() } else { self.a.index_last(t - 1) };
         let xt: Matrix = self.x.index_last(t);
 
@@ -120,7 +121,6 @@ impl Rnn {
         }
 
         let tanh: Matrix = prod.foreach(|r, c| 1. - f32::tanh(prod.at(r, c)).powi(2));
-        // let dtanh: Matrix = da_front * tanh;
         let dtanh: Matrix = da_front.element_wise_mul(tanh);
 
         let dwax: Matrix = dtanh.clone() * xt.transpose();
@@ -135,6 +135,8 @@ impl Rnn {
         *ddwax = ddwax.clone() + dwax;
         *ddwaa = ddwaa.clone() + dwaa;
         *ddba = ddba.iter().zip(dba.iter()).map(|(a, b)| a + b).collect();
+
+        self.waa.transpose() * dtanh
     }
 }
 
@@ -154,12 +156,31 @@ impl Prop for Rnn {
         }
     }
 
-    fn back_prop(&mut self, _back: &Layer, _front: Option<&Layer>, _y: &Matrix) -> Delta {
-        todo!()
+    fn back_prop(&mut self, _back: &Layer, front: Option<&Layer>, _y: &Matrix) -> Delta {
+        let dwax: Matrix = Matrix::new(self.na, self.nx);
+        let dwaa: Matrix = Matrix::new(self.na, self.na);
+        let dba: Vec<f32> = vec![0.; self.na];
+        let mut delta: Delta = Delta::Rnn { dwax, dwaa, dba };
+
+        let mut da_front: Matrix = match front.unwrap() {
+            Layer::Dense(d) => d.da.clone(),
+            _ => panic!("Rnn requires Dense in front for backprop."),
+        };
+
+        for t in (0..self.x.shape().2).rev() {
+            da_front = self.cell_back(da_front, t, &mut delta);
+        }
+
+        delta
     }
 
-    fn apply_delta(&mut self, _delta: &Delta, _a: f32) {
-        todo!()
+    fn apply_delta(&mut self, delta: &Delta, a: f32) {
+        let Delta::Rnn { dwax, dwaa, dba } = &delta else { unreachable!() };
+        self.wax = self.wax.clone() + dwax.clone() * a;
+        self.waa = self.waa.clone() + dwaa.clone() * a;
+        self.ba = self.ba.iter().zip(dba.iter())
+                         .map(|(a, b)| a + b)
+                         .collect();
     }
 }
 
