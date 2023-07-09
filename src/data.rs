@@ -35,6 +35,22 @@ pub mod img {
     }
 }
 
+pub mod text {
+    pub fn build_vocab(sentences: &Vec<String>) -> Vec<String> {
+        let mut vocab: Vec<String> = Vec::new();
+        for sentence in sentences {
+            let words: Vec<String> = sentence.split(' ').map(|x| x.to_string()).collect();
+            for word in words {
+                if !vocab.contains(&word) {
+                    vocab.push(word);
+                }
+            }
+        }
+
+        vocab
+    }
+}
+
 pub mod seq {
     use super::*;
 
