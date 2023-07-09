@@ -1,7 +1,6 @@
-use nn::layers::{Layer, Activation, rnn::SeqResult};
+use nn::prelude::*;
+use nn::layers::rnn::SeqResult;
 use nn::matrix::Matrix;
-use nn::model::{Input, Model, Target};
-use nn::data;
 
 fn main() {
     // Determine if vector is ascending (1) or descending (0)

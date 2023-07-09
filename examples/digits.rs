@@ -1,7 +1,5 @@
-use nn::layers::{Activation, Layer};
+use nn::prelude::*;
 use nn::matrix::Matrix;
-use nn::model::{Input, Model, Target};
-use nn::data;
 
 use image::{DynamicImage, GenericImageView};
 

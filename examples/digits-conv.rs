@@ -1,10 +1,5 @@
-use nn::layers::{
-    pool::{PoolType, Pooling},
-    Activation, Layer,
-};
+use nn::prelude::*;
 use nn::matrix::{Matrix, Shape, Shape3};
-use nn::model::{Input, Model, Target};
-use nn::data;
 
 use image::{DynamicImage, GenericImageView};
 
