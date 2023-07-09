@@ -35,6 +35,23 @@ pub mod img {
     }
 }
 
+pub mod seq {
+    use super::*;
+
+    /// nx = 1
+    /// seqs[example][time step]
+    pub fn one_dim(seqs: Vec<Vec<f32>>) -> Shape3 {
+        let mut res: Shape3 = Shape3::new(1, seqs.len(), seqs[0].len());
+        for e in 0..res.shape().1 {
+            for t in 0..res.shape().2 {
+                *res.at_mut(0).atref(e, t) = seqs[e][t];
+            }
+        }
+
+        res
+    }
+}
+
 /// labels[example][output unit]
 pub fn labels(labels: Vec<Vec<f32>>) -> Matrix {
     Matrix::from(labels).transpose()

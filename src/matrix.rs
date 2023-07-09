@@ -147,6 +147,10 @@ impl Matrix {
     }
 
     pub fn element_wise_mul(&self, other: Matrix) -> Matrix {
+        if self.dims() != other.dims() {
+            panic!("[Matrix::element_wise_mul] self = {}, other = {}", self.dims(), other.dims());
+        }
+
         self.foreach(|row, col| self.at(row, col) * other.at(row, col))
     }
 

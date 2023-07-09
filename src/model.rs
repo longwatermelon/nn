@@ -122,7 +122,14 @@ impl Model {
                         c.adjust_nonparameter_dims(x.to_conv().shape().0)
                     }
                 },
-                Layer::Rnn(_) => todo!(),
+                Layer::Rnn(r) => {
+                    let shape: (usize, usize, usize) = x.to_rnn().shape();
+                    r.prepare_nonparam(shape.0, shape.1, shape.2);
+
+                    if include_parameters {
+                        r.adjust_dims()
+                    }
+                },
             }
         }
     }
@@ -176,7 +183,9 @@ impl Model {
                 c.a = x.to_conv();
                 c.p = x.to_conv();
             },
-            Layer::Rnn(_) => todo!(),
+            Layer::Rnn(r) => {
+                r.a = x.to_rnn();
+            },
         }
     }
 
