@@ -128,16 +128,17 @@ impl Prop for Rnn {
         }
     }
 
-    fn back_prop(&mut self, _back: &Layer, front: Option<&Layer>, _y: &Matrix) -> Delta {
+    fn back_prop(&mut self, _back: &Layer, _front: Option<&Layer>, _y: &Matrix) -> Delta {
         let dwax: Matrix = Matrix::new(self.na, self.nx);
         let dwaa: Matrix = Matrix::new(self.na, self.na);
         let dba: Vec<f32> = vec![0.; self.na];
         let mut delta: Delta = Delta::Rnn { dwax, dwaa, dba };
 
-        let mut da_front: Matrix = match front.unwrap() {
-            Layer::Dense(d) => d.da.clone(),
-            _ => panic!("Rnn requires Dense in front for backprop."),
-        };
+        let mut da_front: Matrix = self.a.index_last(0).foreach(|_, _| 0.);
+        // let mut da_front: Matrix = match front.unwrap() {
+        //     Layer::Dense(d) => d.da.clone(),
+        //     _ => panic!("Rnn requires Dense in front for backprop."),
+        // };
 
         for t in (0..self.x.shape().2).rev() {
             da_front = self.cell_back(da_front, t, &mut delta);
