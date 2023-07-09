@@ -68,7 +68,7 @@ impl Model {
                 Target::Epochs(n) => epoch >= n,
                 Target::Cost(c) => self.cost(y) <= c,
             } {
-                Model::print_iter(epoch, self.cost(y));
+                Model::print_iter(epoch - 1, self.cost(y));
                 break;
             }
 
