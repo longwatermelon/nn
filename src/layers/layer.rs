@@ -1,7 +1,7 @@
 use super::{
     conv::Conv,
     dense::Dense,
-    rnn::{Rnn, SeqResult},
+    rnn::Rnn,
     pool::{PoolType, Pooling},
 };
 use crate::matrix::{Matrix, Shape, Shape4, Shape3};
@@ -125,8 +125,8 @@ impl Layer {
         Layer::Conv(Conv::new(filters, fshape, afn, pooling))
     }
 
-    pub fn rnn(n: usize, rtype: SeqResult) -> Self {
-        Layer::Rnn(Rnn::new(n, rtype))
+    pub fn rnn(n: usize) -> Self {
+        Layer::Rnn(Rnn::new(n))
     }
 
     pub fn input(x: &Input) -> Self {
@@ -138,7 +138,7 @@ impl Layer {
                 Activation::Linear,
                 Pooling::new(PoolType::Max, 1, 1),
             ),
-            Input::Rnn(a) => Layer::rnn(a.shape().0, SeqResult::Last),
+            Input::Rnn(a) => Layer::rnn(a.shape().0),
         }
     }
 

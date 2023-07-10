@@ -2,12 +2,6 @@ use crate::layers::{Layer, Delta, Input, Prop};
 use crate::matrix::{Matrix, Shape3, Shape};
 use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum SeqResult {
-    Sequence,
-    Last,
-}
-
 /// Uses tanh activation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Rnn {
@@ -19,11 +13,10 @@ pub struct Rnn {
     pub(crate) a: Shape3,
     x: Shape3,
     a0: Matrix,
-    rtype: SeqResult,
 }
 
 impl Rnn {
-    pub fn new(n: usize, rtype: SeqResult) -> Self {
+    pub fn new(n: usize) -> Self {
         Self {
             na: n,
             nx: 0,
@@ -33,7 +26,6 @@ impl Rnn {
             a: Shape3::default(),
             x: Shape3::default(),
             a0: Matrix::default(),
-            rtype,
         }
     }
 
@@ -54,7 +46,6 @@ impl Rnn {
     }
 
     pub fn result(&self) -> Matrix {
-        // TODO Add sequence result as well
         self.a.index_last(self.a.shape().2 - 1)
     }
 
@@ -163,7 +154,7 @@ mod tests {
 
     #[test]
     fn forward_cell() {
-        let mut l: Rnn = Rnn::new(5, SeqResult::Sequence);
+        let mut l: Rnn = Rnn::new(5);
         l.waa = Matrix::from(
             vec![
                 vec![-0.22232814, -0.20075807,  0.18656139,  0.41005165,  0.19829972],
@@ -229,7 +220,7 @@ mod tests {
         let na: usize = 5;
         let m: usize = 10;
 
-        let mut l: Rnn = Rnn::new(na, SeqResult::Sequence);
+        let mut l: Rnn = Rnn::new(na);
 
         l.waa = Matrix::from(
             vec![
@@ -391,7 +382,7 @@ mod tests {
             ]
         );
 
-        let tmp: Rnn = Rnn::new(1, SeqResult::Last);
+        let tmp: Rnn = Rnn::new(1);
         // l.adjust_dims(ny);
         l.prepare_nonparam(nx, m, 4);
         l.forward_prop(&Layer::Rnn(tmp), &Input::Rnn(x));
@@ -411,7 +402,7 @@ mod tests {
         let m: usize = 10;
         let tx: usize = 1;
 
-        let mut l: Rnn = Rnn::new(na, SeqResult::Last);
+        let mut l: Rnn = Rnn::new(na);
 
         l.wax = Matrix::from(
             vec![
