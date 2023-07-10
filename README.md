@@ -1,4 +1,9 @@
 # nn
 Neural networks from scratch
 
-Includes implementations of DNN and CNN
+Currently implemented:
+* Linear regression
+* Dense neural network
+* Convolutional neural network
+* Recurrent neural network
+
