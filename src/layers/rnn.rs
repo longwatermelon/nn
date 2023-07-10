@@ -125,6 +125,7 @@ impl Prop for Rnn {
         let dba: Vec<f32> = vec![0.; self.na];
         let mut delta: Delta = Delta::Rnn { dwax, dwaa, dba };
 
+        // TODO dL/da = -y/a + (1-y)/(1-a)
         let mut da_front: Matrix = self.a.index_last(0).foreach(|_, _| 0.);
 
         for t in (0..self.x.shape().2).rev() {

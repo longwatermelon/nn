@@ -85,13 +85,14 @@ impl Model {
         std::io::stdout().flush().unwrap();
     }
 
-    pub fn predict(&mut self, x: &Input) -> Result<Vec<f32>, Error> {
+    pub fn predict(&mut self, x: &Input) -> Result<Matrix, Error> {
         self.adjust_layer_dims(x, false);
         self.forward_prop(x);
-        if let Some(last) = self.layers.last() {
-            Ok(last.to_dense().a.extract_col(0))
-        } else {
-            Err(Error::new("no layers detected"))
+
+        match self.layers.last().unwrap() {
+            Layer::Dense(l) => Ok(l.a.clone()),
+            Layer::Rnn(l) => Ok(l.a.index_last(l.a.shape().2 - 1)),
+            _ => Err(Error::new("[Model::predict] Output layer can only be dense or rnn.")),
         }
     }
 
@@ -255,7 +256,7 @@ mod tests {
 
         let prediction: f32 = model
             .predict(&Input::Dense(Matrix::from(vec![vec![0.], vec![1.]])))
-            .unwrap()[0];
+            .unwrap().at(0, 0);
 
         assert!(prediction > 0.5);
     }

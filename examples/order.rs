@@ -15,12 +15,11 @@ fn main() {
     let mut model: Model = Model::new();
     model.push(Layer::input(&x));
     model.push(Layer::rnn(5));
-    model.push(Layer::dense(1, Activation::Sigmoid));
 
     model.train(&x, &y, Target::Epochs(10000), 0.1, Some(10));
     model.save("examples/model/params");
 
     let xtest: Input = Input::Rnn(data::seq::one_dim(vec![vec![2., 1., 0.]]));
-    println!("{:?}", model.predict(&xtest));
+    println!("{:?}", model.predict(&xtest).unwrap());
 }
 
