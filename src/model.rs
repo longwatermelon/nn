@@ -201,7 +201,7 @@ impl Model {
             for r in 0..y.rows() {
                 for c in 0..y.cols() {
                     sum += y.at(r, c)
-                        * if d.a.at(r, c) == 0. {
+                        * if d.a.at(r, c) <= 0. {
                             0.
                         } else {
                             f32::ln(d.a.at(r, c))

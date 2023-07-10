@@ -116,6 +116,10 @@ impl Matrix {
         res
     }
 
+    pub fn clip(&self, lower: f32, upper: f32) -> Matrix {
+        self.foreach(|r, c| self.at(r, c).clamp(lower, upper))
+    }
+
     pub fn foreach(&self, f: impl Fn(usize, usize) -> f32) -> Matrix {
         let mut res: Matrix = Matrix::new(self.rows(), self.cols());
 

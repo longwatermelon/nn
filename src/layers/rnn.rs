@@ -126,10 +126,6 @@ impl Prop for Rnn {
         let mut delta: Delta = Delta::Rnn { dwax, dwaa, dba };
 
         let mut da_front: Matrix = self.a.index_last(0).foreach(|_, _| 0.);
-        // let mut da_front: Matrix = match front.unwrap() {
-        //     Layer::Dense(d) => d.da.clone(),
-        //     _ => panic!("Rnn requires Dense in front for backprop."),
-        // };
 
         for t in (0..self.x.shape().2).rev() {
             da_front = self.cell_back(da_front, t, &mut delta);
