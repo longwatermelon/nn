@@ -1,6 +1,6 @@
 pub use crate::layers::Input;
 
-use crate::layers::{dense::Dense, Delta, Layer, Prop};
+use crate::layers::{Delta, Layer, Prop};
 use crate::matrix::Matrix;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -198,14 +198,19 @@ impl Model {
         let mut sum: f32 = 0.;
 
         if let Some(last) = self.layers.last() {
-            let d: Dense = last.to_dense();
+            let a: Matrix = match last {
+                Layer::Dense(l) => l.a.clone(),
+                Layer::Rnn(l) => l.a.index_last(l.a.shape().2 - 1),
+                _ => panic!("[Model::cost] Only dense and rnn are valid output layers."),
+            };
+
             for r in 0..y.rows() {
                 for c in 0..y.cols() {
                     sum += y.at(r, c)
-                        * if d.a.at(r, c) <= 0. {
+                        * if a.at(r, c) <= 0.01 {
                             0.
                         } else {
-                            f32::ln(d.a.at(r, c))
+                            f32::ln(a.at(r, c))
                         };
                 }
             }

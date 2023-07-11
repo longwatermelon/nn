@@ -13,6 +13,7 @@ pub struct Rnn {
     pub(crate) a: Shape3,
     x: Shape3,
     a0: Matrix,
+    da0: Matrix,
 }
 
 impl Rnn {
@@ -26,6 +27,7 @@ impl Rnn {
             a: Shape3::default(),
             x: Shape3::default(),
             a0: Matrix::default(),
+            da0: Matrix::default(),
         }
     }
 
@@ -72,9 +74,12 @@ impl Rnn {
 
     /// Returns da_front for the next cell_back call
     fn cell_back(&mut self, da_front: Matrix, t: usize, delta: &mut Delta) -> Matrix {
+        // (na, m)
         let a_prev: Matrix = if t == 0 { self.a0.clone() } else { self.a.index_last(t - 1) };
+        // (nx, m)
         let xt: Matrix = self.x.index_last(t);
 
+        // (na, m)
         let mut prod: Matrix = self.wax.clone() * xt.clone() +
                            self.waa.clone() * a_prev.clone();
         for e in 0..prod.cols() {
@@ -83,12 +88,17 @@ impl Rnn {
             }
         }
 
+        // (na, m)
         let tanh: Matrix = prod.foreach(|r, c| 1. - f32::tanh(prod.at(r, c)).powi(2));
+        // (na, m)
         let dtanh: Matrix = da_front.element_wise_mul(tanh);
 
+        // (na, nx)
         let dwax: Matrix = dtanh.clone() * xt.transpose();
+        // (na, na)
         let dwaa: Matrix = dtanh.clone() * a_prev.transpose();
 
+        // (na)
         let mut dba: Vec<f32> = vec![0.; dtanh.rows()];
         for i in 0..dba.len() {
             dba[i] = dtanh.extract_row(i).iter().sum();
@@ -125,13 +135,24 @@ impl Prop for Rnn {
         let dba: Vec<f32> = vec![0.; self.na];
         let mut delta: Delta = Delta::Rnn { dwax, dwaa, dba };
 
-        // TODO dL/da = -y/a + (1-y)/(1-a)
         let mut da_front: Matrix = self.a.index_last(0).foreach(|_, _| 0.);
+        // let mut da_front: Matrix = if let Some(front) = front {
+        //     let Layer::Rnn(front) = front else {
+        //         panic!("Rnn layer needs rnn layer in front.");
+        //     };
+
+        //     front.da0.clone()
+        // } else {
+        //     let a: Matrix = self.a.index_last(self.a.shape().2 - 1);
+        //     let y: Matrix = y.broadcast(a.shape());
+        //     -y.clone() / a.clone() + (1. - y.clone()) / (1. - a)
+        // };
 
         for t in (0..self.x.shape().2).rev() {
             da_front = self.cell_back(da_front, t, &mut delta);
         }
 
+        self.da0 = da_front;
         delta
     }
 

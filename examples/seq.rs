@@ -20,7 +20,7 @@ fn main() {
     model.push(Layer::rnn(20));
     model.push(Layer::dense(3, Activation::Sigmoid));
 
-    model.train(&x, &y, Target::Epochs(10000), 1., Some(100));
+    model.train(&x, &y, Target::Epochs(10000), 2., Some(100));
     model.save("examples/model/params");
 
     let xtest: Input = Input::Rnn(data::seq::one_dim(vec![vec![0., 1., 2.]]));

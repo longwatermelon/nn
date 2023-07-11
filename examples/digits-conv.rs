@@ -30,11 +30,11 @@ fn main() {
 
         let pred0: f32 = model
             .predict(&Input::Conv(data::img::shaped::three_dim(vec![example0])))
-            .unwrap()[0];
+            .unwrap().at(0, 0);
 
         let pred1: f32 = model
             .predict(&Input::Conv(data::img::shaped::three_dim(vec![example1])))
-            .unwrap()[0];
+            .unwrap().at(0, 0);
 
         println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
         println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);

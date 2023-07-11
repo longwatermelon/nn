@@ -151,8 +151,8 @@ impl Matrix {
     }
 
     pub fn element_wise_mul(&self, other: Matrix) -> Matrix {
-        if self.dims() != other.dims() {
-            panic!("[Matrix::element_wise_mul] self = {}, other = {}", self.dims(), other.dims());
+        if self.shape() != other.shape() {
+            panic!("[Matrix::element_wise_mul] self = {:?}, other = {:?}", self.shape(), other.shape());
         }
 
         self.foreach(|row, col| self.at(row, col) * other.at(row, col))
@@ -164,6 +164,17 @@ impl Matrix {
 
     pub fn sum(&self) -> f32 {
         self.data.iter().flatten().fold(0., |acc, &x| acc + x)
+    }
+
+    pub fn broadcast(&self, shape: (usize, usize)) -> Matrix {
+        let mut res: Matrix = Matrix::new(shape.0, shape.1);
+        for r in 0..res.rows() {
+            for c in 0..res.cols() {
+                *res.atref(r, c) = self.at(r % self.rows(), c % self.cols());
+            }
+        }
+
+        res
     }
 
     pub fn check_valid(&self, row: usize, col: usize) {
@@ -192,8 +203,8 @@ impl Matrix {
         }
     }
 
-    pub fn dims(&self) -> String {
-        format!("{}x{}", self.rows(), self.cols())
+    pub fn shape(&self) -> (usize, usize) {
+        (self.rows(), self.cols())
     }
 
     pub fn data(&self) -> &Vec<Vec<f32>> {
@@ -211,6 +222,7 @@ impl ops::Mul<Matrix> for Matrix {
     type Output = Matrix;
 
     fn mul(self, rhs: Matrix) -> Matrix {
+        assert_eq!(self.cols(), rhs.rows());
         let mut res: Matrix = Matrix::new(self.rows(), rhs.cols());
 
         for r in 0..self.rows() {
@@ -241,10 +253,27 @@ impl ops::Mul<f32> for Matrix {
     }
 }
 
+impl ops::Div<Matrix> for Matrix {
+    type Output = Matrix;
+
+    fn div(self, rhs: Matrix) -> Matrix {
+        self * rhs.foreach(|r, c| 1. / rhs.at(r, c))
+    }
+}
+
+impl ops::Neg for Matrix {
+    type Output = Matrix;
+
+    fn neg(self) -> Matrix {
+        self.foreach(|r, c| -self.at(r, c))
+    }
+}
+
 impl ops::Add<Matrix> for Matrix {
     type Output = Matrix;
 
     fn add(self, rhs: Matrix) -> Matrix {
+        assert_eq!(self.shape(), rhs.shape());
         let mut res: Matrix = Matrix::new(self.rows(), self.cols());
 
         for r in 0..self.rows() {
@@ -286,6 +315,14 @@ impl ops::Sub<Matrix> for Matrix {
         }
 
         res
+    }
+}
+
+impl ops::Sub<Matrix> for f32 {
+    type Output = Matrix;
+
+    fn sub(self, rhs: Matrix) -> Matrix {
+        rhs.foreach(|r, c| self - rhs.at(r, c))
     }
 }
 
