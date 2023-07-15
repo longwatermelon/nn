@@ -28,16 +28,18 @@ fn main() {
         let example1: Vec<f32> =
             process_image(image::open("examples/data/digits/test1.png").unwrap());
 
-        let pred0: f32 = model
+        let pred0: Matrix = model
             .predict(&Input::Dense(data::img::flat::one_dim(vec![example0])))
-            .unwrap().at(0, 0);
+            .unwrap();
 
-        let pred1: f32 = model
+        let pred1: Matrix = model
             .predict(&Input::Dense(data::img::flat::one_dim(vec![example1])))
-            .unwrap().at(0, 0);
+            .unwrap();
 
-        println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
-        println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
+        // println!("test0 prediction: {:.2}% accuracy", (1. - pred0) * 100.);
+        // println!("test1 prediction: {:.2}% accuracy", pred1 * 100.);
+        println!("test0: {:?}", pred0);
+        println!("test1: {:?}", pred1);
     } else if args[0] == "train" {
         let mut y: Vec<Vec<f32>> = Vec::new();
 
@@ -47,7 +49,7 @@ fn main() {
                 image::open(format!("examples/data/digits/{}0.png", i)).unwrap(),
             ));
 
-            y.push(vec![0.]);
+            y.push(vec![1., 0.]);
         }
 
         for i in 0..10 {
@@ -55,7 +57,7 @@ fn main() {
                 image::open(format!("examples/data/digits/{}1.png", i)).unwrap(),
             ));
 
-            y.push(vec![1.]);
+            y.push(vec![0., 1.]);
         }
 
         let x: Input = Input::Dense(data::img::flat::one_dim(images));
@@ -65,7 +67,7 @@ fn main() {
         model.push(Layer::input(&x));
         model.push(Layer::dense(25, Activation::Sigmoid));
         model.push(Layer::dense(15, Activation::Sigmoid));
-        model.push(Layer::dense(1, Activation::Sigmoid));
+        model.push(Layer::dense(2, Activation::Sigmoid));
         model.train(&x, &y, Target::Cost(0.001), 1., Some(100));
         model.save("examples/model/params");
     } else {

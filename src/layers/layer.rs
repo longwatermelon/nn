@@ -93,7 +93,17 @@ impl Activation {
             },
             Activation::Softmax => {
                 |z: Matrix| {
-                    todo!()
+                    let mut softmax: Matrix = z.clone();
+                    for c in 0..z.cols() {
+                        let col: Vec<f32> = z.extract_col(c);
+                        let a: Vec<f32> = util::softmax(&col);
+
+                        for r in 0..z.rows() {
+                            *softmax.atref(r, c) = a[r];
+                        }
+                    }
+
+                    softmax.foreach(|r, c| softmax.at(r, c) - (1. - softmax.at(r, c)))
                 }
             },
         }
