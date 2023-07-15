@@ -14,6 +14,7 @@ pub enum Activation {
     Linear,
     Relu,
     Tanh,
+    Softmax,
 }
 
 #[derive(Debug)]
@@ -59,8 +60,21 @@ impl Activation {
             Activation::Linear => |z: Matrix| z,
             Activation::Sigmoid => |z: Matrix| z.foreach(|r, c| util::sigmoid(z.at(r, c))),
             Activation::Relu => |z: Matrix| z.foreach(|r, c| f32::max(0., z.at(r, c))),
-            Activation::Tanh => {
-                |z: Matrix| z.foreach(|r, c| util::tanh(z.at(r, c)))
+            Activation::Tanh => |z: Matrix| z.foreach(|r, c| util::tanh(z.at(r, c))),
+            Activation::Softmax => {
+                |z: Matrix| {
+                    let mut res: Matrix = z.clone();
+                    for c in 0..z.cols() {
+                        let col: Vec<f32> = z.extract_col(c);
+                        let a: Vec<f32> = util::softmax(&col);
+
+                        for r in 0..z.rows() {
+                            *res.atref(r, c) = a[r];
+                        }
+                    }
+
+                    res
+                }
             },
         }
     }
@@ -76,6 +90,11 @@ impl Activation {
             Activation::Tanh => |z: Matrix| {
                 let tanh: Matrix = z.foreach(|r, c| util::tanh(z.at(r, c)));
                 tanh.foreach(|r, c| 1. - tanh.at(r, c) * tanh.at(r, c))
+            },
+            Activation::Softmax => {
+                |z: Matrix| {
+                    todo!()
+                }
             },
         }
     }

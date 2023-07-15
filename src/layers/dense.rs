@@ -85,7 +85,6 @@ impl Prop for Dense {
 
         let da: Matrix = gprime(self.dz.clone());
         self.da = self.dz.element_wise_mul(da.foreach(|r, c| 1. / da.at(r, c)));
-        // self.da = self.dz.element_wise_mul(self.dz.foreach(|r, c| 1. / afn(self.dz.at(r, c))));
 
         let dw: Matrix = self.dz.clone() * bl.a.transpose() * (1. / y.cols() as f32);
         let mut db: Vec<f32> = Vec::with_capacity(self.dz.cols());
