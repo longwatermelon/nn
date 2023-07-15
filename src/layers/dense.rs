@@ -58,31 +58,34 @@ impl Prop for Dense {
         let bl: Dense = back.to_dense();
 
         self.a = Matrix::new(self.n, x.to_dense().cols());
-        let afn = self.afn.getfn();
+        let g = self.afn.getfn();
 
         self.z = self.w.clone() * bl.a;
         self.z = self.z.foreach(|r, c| self.z.at(r, c) + self.b[r]);
-        self.a = self
-            .a
-            .foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
+        self.a = self.a.clone() + g(self.z.clone());
+        // self.a = self
+        //     .a
+        //     .foreach(|r, c| self.a.at(r, c) + afn(self.z.at(r, c)));
     }
 
     fn back_prop(&mut self, back: &Layer, front: Option<&Layer>, y: &Matrix) -> Delta {
         let bl: Dense = back.to_dense();
-        let afn = self.afn.getfn_derivative();
+        let gprime = self.afn.getfn_derivative();
 
         if let Some(front) = front {
             let fl: Dense = front.to_dense();
 
             let left: Matrix = fl.w.transpose() * fl.dz;
-            let right: Matrix = self.z.foreach(|r, c| afn(self.z.at(r, c)));
+            let right: Matrix = gprime(self.z.clone());
 
             self.dz = left.element_wise_mul(right);
         } else {
             self.dz = self.a.clone() - y.clone();
         }
 
-        self.da = self.dz.element_wise_mul(self.dz.foreach(|r, c| 1. / afn(self.dz.at(r, c))));
+        let da: Matrix = gprime(self.dz.clone());
+        self.da = self.dz.element_wise_mul(da.foreach(|r, c| 1. / da.at(r, c)));
+        // self.da = self.dz.element_wise_mul(self.dz.foreach(|r, c| 1. / afn(self.dz.at(r, c))));
 
         let dw: Matrix = self.dz.clone() * bl.a.transpose() * (1. / y.cols() as f32);
         let mut db: Vec<f32> = Vec::with_capacity(self.dz.cols());

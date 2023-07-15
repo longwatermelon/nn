@@ -119,12 +119,14 @@ impl Conv {
                 }
 
                 let gprime = self.afn.getfn_derivative();
+                let dz: Shape4 = self.z.foreach(|_, m| gprime(m.clone()));
                 for e in 0..self.dz.shape().0 {
                     for n in 0..self.dz.shape().1 {
                         for u in 0..self.dz.shape().2 {
                             for v in 0..self.dz.shape().3 {
                                 *self.dz.at_mut(e).at_mut(n).atref(u, v) =
-                                    dla.at(e).at(n).at(u, v) * gprime(self.z.at(e).at(n).at(u, v));
+                                    // dla.at(e).at(n).at(u, v) * gprime(self.z.at(e).at(n).at(u, v));
+                                    dla.at(e).at(n).at(u, v) * dz.at(e).at(n).at(u, v);
                             }
                         }
                     }
@@ -147,7 +149,7 @@ impl Conv {
             },
             Layer::Conv(fl) => {
                 let gprime = self.afn.getfn_derivative();
-                let daz: Shape4 = self.z.foreach(|_, m| m.foreach(|i, j| gprime(m.at(i, j))));
+                let daz: Shape4 = self.z.foreach(|_, m| gprime(m.clone()));
 
                 let dzp: Shape4 = Shape4::new(fl.nc, self.nc, fl.fh, fl.fw)
                     .foreach(|(n, c), m| m.foreach(|r, s| fl.w.at(n).at(c).at(r, s)));
@@ -269,11 +271,13 @@ impl Prop for Conv {
         let afn = self.afn.getfn();
         for e in 0..m {
             for n in 0..self.nc {
-                *self.a.at_mut(e).at_mut(n) = self
+                *self.a.at_mut(e).at_mut(n) = afn(self
                     .z
                     .at(e)
                     .at(n)
-                    .foreach(|r, c| afn(self.z.at(e).at(n).at(r, c)));
+                    .clone()
+                );
+                    // .foreach(|r, c| afn(self.z.at(e).at(n).at(r, c)));
             }
         }
 

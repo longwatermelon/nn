@@ -5,6 +5,7 @@ use super::{
     pool::{PoolType, Pooling},
 };
 use crate::matrix::{Matrix, Shape, Shape4, Shape3};
+use crate::util;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,28 +54,28 @@ pub trait Prop {
 }
 
 impl Activation {
-    pub fn getfn(&self) -> impl Fn(f32) -> f32 {
+    pub fn getfn(&self) -> impl Fn(Matrix) -> Matrix {
         match self {
-            Activation::Linear => |z: f32| z,
-            Activation::Sigmoid => |z: f32| 1. / (1. + f32::exp(-z)),
-            Activation::Relu => |z: f32| f32::max(0., z),
+            Activation::Linear => |z: Matrix| z,
+            Activation::Sigmoid => |z: Matrix| z.foreach(|r, c| util::sigmoid(z.at(r, c))),
+            Activation::Relu => |z: Matrix| z.foreach(|r, c| f32::max(0., z.at(r, c))),
             Activation::Tanh => {
-                |z: f32| (f32::exp(z) - f32::exp(-z)) / (f32::exp(z) + f32::exp(-z))
-            }
+                |z: Matrix| z.foreach(|r, c| util::tanh(z.at(r, c)))
+            },
         }
     }
 
-    pub fn getfn_derivative(&self) -> impl Fn(f32) -> f32 {
+    pub fn getfn_derivative(&self) -> impl Fn(Matrix) -> Matrix {
         match self {
-            Activation::Linear => |_| 1.,
-            Activation::Sigmoid => |z: f32| {
-                let sigmoid = |z: f32| 1. / (1. + f32::exp(-z));
-                sigmoid(z) * (1. - sigmoid(z))
+            Activation::Linear => |z: Matrix| z.foreach(|_, _| 1.),
+            Activation::Sigmoid => |z: Matrix| {
+                let sigmoid: Matrix = z.foreach(|r, c| util::sigmoid(z.at(r, c)));
+                sigmoid.foreach(|r, c| sigmoid.at(r, c) * (1. - sigmoid.at(r, c)))
             },
-            Activation::Relu => |z: f32| if z > 0. { z } else { 0. },
-            Activation::Tanh => |z: f32| {
-                let tanh = |z: f32| (f32::exp(z) - f32::exp(-z)) / (f32::exp(z) + f32::exp(-z));
-                1. - tanh(z) * tanh(z)
+            Activation::Relu => |z: Matrix| z.foreach(|r, c| if z.at(r, c) > 0. { z.at(r, c) } else { 0. }),
+            Activation::Tanh => |z: Matrix| {
+                let tanh: Matrix = z.foreach(|r, c| util::tanh(z.at(r, c)));
+                tanh.foreach(|r, c| 1. - tanh.at(r, c) * tanh.at(r, c))
             },
         }
     }
